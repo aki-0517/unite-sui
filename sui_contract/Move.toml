@@ -1,0 +1,9 @@
+[package]
+name = "fusion_plus_crosschain"
+version = "1.0.0"
+edition = "2024.beta"
+
+[dependencies]
+
+[addresses]
+fusion_plus_crosschain = "0x0"
