@@ -1,0 +1,3 @@
+[submodule "eth-contract/lib/openzeppelin-contracts"]
+	path = eth-contract/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts

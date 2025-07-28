@@ -1,0 +1,16 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.20"
+remappings = [
+    "openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/"
+]
+
+# Use root .env file for environment variables
+env = "../.env"
+
+[dependencies]
+openzeppelin-contracts = { version = "4.9.0", git = "https://github.com/OpenZeppelin/openzeppelin-contracts.git" }
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
