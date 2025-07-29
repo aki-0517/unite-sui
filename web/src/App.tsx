@@ -190,19 +190,6 @@ function App() {
           </div>
         )}
 
-        {/* Info Section */}
-        <div className="info-section">
-          <h3>Cross-Chain Swap Information</h3>
-          <p>Executes the exact same flow as verify-bidirectional-swap.ts script.</p>
-          <ul>
-            <li><strong>User signs only:</strong> Initial escrow transaction</li>
-            <li><strong>Resolvers handle:</strong> All subsequent fills and transfers</li>
-            <li>Sepolia testnet ↔ Sui devnet</li>
-            <li>Fixed rate: 1 ETH = 1000 SUI</li>
-            <li>Complete 1inch Fusion+ features</li>
-          </ul>
-        </div>
-
         {/* Transaction History Section */}
         {showTransactionHistory && (
           <div className="transaction-history">

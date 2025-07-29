@@ -79,22 +79,69 @@ export class ResolverService {
     this.addLog = addLog
   }
 
-  // Request SUI from faucet for resolver
-  async requestSuiFromFaucetForResolver(resolverKeypair: Ed25519Keypair): Promise<void> {
-    const address = resolverKeypair.getPublicKey().toSuiAddress()
-    this.addLog(`💰 Requesting tokens from Sui faucet for resolver...`)
-    this.addLog(`📧 Resolver address: ${address}`)
-    
+  // Ensure Sui balance for resolver (same as scripts)
+  async ensureSuiBalance(address: string, requiredAmount: bigint = BigInt(10000000000)): Promise<void> {
     try {
+      this.addLog(`🔍 Checking Sui account balance: ${address}`)
+      
+      const coins = await suiClient.getCoins({
+        owner: address,
+        coinType: '0x2::sui::SUI'
+      })
+      
+      let totalBalance = BigInt(0)
+      for (const coin of coins.data) {
+        totalBalance += BigInt(coin.balance)
+      }
+      
+      this.addLog(`💰 Current total balance: ${Number(totalBalance) / 1e9} SUI`)
+      
+      if (totalBalance < requiredAmount) {
+        this.addLog(`⚠️ Balance is insufficient. Getting tokens from faucet...`)
+        await this.requestSuiFromFaucet(address)
+        
+        // Check balance after obtaining using simplified method
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        const updatedCoins = await suiClient.getCoins({
+          owner: address,
+          coinType: '0x2::sui::SUI'
+        })
+        
+        let updatedBalance = BigInt(0)
+        for (const coin of updatedCoins.data) {
+          updatedBalance += BigInt(coin.balance)
+        }
+        
+        this.addLog(`💰 Updated balance: ${Number(updatedBalance) / 1e9} SUI`)
+        
+        if (updatedBalance < requiredAmount) {
+          this.addLog(`⚠️ Balance is still insufficient but continuing. Required: ${Number(requiredAmount) / 1e9}, Current: ${Number(updatedBalance) / 1e9}`)
+        }
+      } else {
+        this.addLog(`✅ Balance is sufficient`)
+      }
+      
+    } catch (error) {
+      this.addLog(`❌ Sui balance check error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw error
+    }
+  }
+
+  // Request SUI from faucet (same as scripts)
+  async requestSuiFromFaucet(address: string): Promise<void> {
+    try {
+      this.addLog(`💰 Requesting tokens from Sui faucet...`)
+      this.addLog(`📧 Address: ${address}`)
+      
       await requestSuiFromFaucetV2({
         host: getFaucetHost('devnet'),
         recipient: address,
       })
       
-      this.addLog(`✅ Obtained tokens from Sui faucet for resolver`)
+      this.addLog(`✅ Obtained tokens from Sui faucet`)
       
-      // Wait for the transaction to be processed
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Wait a bit for the transaction to be processed
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Check balance after obtaining
       const coins = await suiClient.getCoins({
@@ -103,55 +150,107 @@ export class ResolverService {
       })
       
       const balance = coins.data.reduce((total, coin) => total + BigInt(coin.balance), BigInt(0))
-      this.addLog(`💰 Resolver balance after faucet: ${Number(balance) / 1e9} SUI`)
+      this.addLog(`💰 Balance after faucet: ${Number(balance) / 1e9} SUI`)
       
     } catch (error) {
-      this.addLog(`❌ Failed to get SUI from faucet: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      this.addLog(`❌ Failed to get tokens from Sui faucet: ${error instanceof Error ? error.message : 'Unknown error'}`)
       throw error
     }
   }
 
-  // Create Sui escrow with resolver keypair (for ETH→SUI swaps)
+  // Create Sui escrow with resolver keypair (for ETH→SUI swaps) - exact copy from scripts
   async createSuiEscrowWithResolver(hashLock: string, timeLock: bigint, amount: bigint): Promise<string> {
     this.addLog(`🔧 Resolver creating Sui escrow...`)
     this.addLog(`💰 Amount: ${Number(amount) / 1e9} SUI`)
     this.addLog(`⏰ Time lock: ${timeLock}`)
     this.addLog(`🔒 Hash lock: ${hashLock}`)
 
-    // Ensure resolver has enough SUI (request from faucet if needed)
-    await this.requestSuiFromFaucetForResolver(suiResolver2Keypair)
-
-    const transaction = new Transaction()
-
-    // Get Sui coins (split from gas coin) - use bigger amount to ensure we have enough
-    const totalAmountNeeded = Number(amount) + 1000000000 // Add 1 SUI for gas
-    const [coin] = transaction.splitCoins(transaction.gas, [Number(amount)])
-
-    // Call escrow creation function
-    transaction.moveCall({
-      target: `${SUI_ESCROW_PACKAGE_ID}::cross_chain_escrow::create_and_share_escrow`,
-      typeArguments: ['0x2::sui::SUI'],
-      arguments: [
-        coin,
-        transaction.pure.address('0x0'), // taker (anyone can take)
-        transaction.pure.vector('u8', hexStringToBytesForSui(hashLock) as number[]),
-        transaction.pure.u64(timeLock),
-        transaction.pure.string('test-eth-order'),
-        transaction.object('0x6'), // Clock object
-      ],
-    })
-
-    this.addLog(`🔧 Sui transaction preparation completed`)
-
     try {
+      // Get resolver address
+      const address = suiResolver2Keypair.getPublicKey().toSuiAddress()
+      this.addLog(`🔍 Checking Sui resolver account: ${address}`)
+      
+      // Check balance and get from faucet if necessary (same as scripts)
+      await this.ensureSuiBalance(address, BigInt(3000000000)) // 3 SUI - adjusted to minimum required
+      
+      const transaction = new Transaction()
+      
+      // Get gas coins and perform necessary validation (same as scripts)
+      const gasCoins = await suiClient.getCoins({
+        owner: address,
+        coinType: '0x2::sui::SUI'
+      })
+      
+      if (gasCoins.data.length === 0) {
+        throw new Error('Gas coins not found for resolver')
+      }
+      
+      if (amount <= 0) {
+        throw new Error(`Invalid amount: ${amount}`)
+      }
+      
+      const gasCoin = gasCoins.data[0]
+      if (BigInt(gasCoin.balance) < amount) {
+        throw new Error(`Insufficient gas coin balance: ${gasCoin.balance} < ${amount}`)
+      }
+      
+      // Set gas payment explicitly (same as scripts)
+      transaction.setGasPayment([{
+        version: gasCoin.version,
+        objectId: gasCoin.coinObjectId,
+        digest: gasCoin.digest
+      }])
+      
+      this.addLog(`🔧 Preparing Sui transaction...`)
+      this.addLog(`⛽ Gas coin: ${gasCoin.coinObjectId}`)
+      
+      // Get Sui coins (split from gas coin) - same as scripts
+      const [coin] = transaction.splitCoins(transaction.gas, [Number(amount)])
+
+      // Call escrow creation function - same as scripts
+      transaction.moveCall({
+        target: `${SUI_ESCROW_PACKAGE_ID}::cross_chain_escrow::create_and_share_escrow`,
+        typeArguments: ['0x2::sui::SUI'],
+        arguments: [
+          coin,
+          transaction.pure.address('0x0'), // taker (anyone can take)
+          transaction.pure.vector('u8', hexStringToBytesForSui(hashLock) as number[]),
+          transaction.pure.u64(timeLock),
+          transaction.pure.string('test-eth-order'),
+          transaction.object('0x6'), // Clock object
+        ],
+      })
+
+      this.addLog(`🔧 Sui transaction preparation completed`)
+
+      // Execute transaction with same options as scripts
       const result = await suiClient.signAndExecuteTransaction({
         transaction,
         signer: suiResolver2Keypair,
-        options: { showEffects: true }
+        options: {
+          showEffects: true,
+          showObjectChanges: true,
+        },
+        requestType: 'WaitForLocalExecution', // Same as scripts
       })
 
-      this.addLog(`📋 Resolver created Sui escrow: ${result.digest}`)
-      return result.digest
+      this.addLog(`📋 Transaction result: ${result.digest}`)
+      
+      // Get escrow ID from object changes (same as scripts)
+      const createdObject = result.objectChanges?.find(
+        change => change.type === 'created' && change.objectType?.includes('CrossChainEscrow')
+      )
+
+      if (createdObject && createdObject.type === 'created') {
+        const escrowId = createdObject.objectId
+        this.addLog(`📦 Escrow ID retrieved from object changes: ${escrowId}`)
+        return escrowId
+      } else {
+        // Fallback: return transaction digest
+        this.addLog(`⚠️ Could not retrieve escrow ID from object changes. Using transaction digest.`)
+        return result.digest
+      }
+
     } catch (error) {
       this.addLog(`❌ Failed to create Sui escrow: ${error instanceof Error ? error.message : 'Unknown error'}`)
       throw error
@@ -292,6 +391,12 @@ export class ResolverService {
     this.addLog(`🔄 Starting resolver fill of Sui escrow...`)
     this.addLog(`📦 Escrow ID: ${escrowId}`)
     this.addLog(`💰 Total amount: ${Number(amount) / 1e9} SUI`)
+
+    // Check balance and get from faucet if necessary (same as scripts)
+    const resolver2Address = suiResolver2Keypair.getPublicKey().toSuiAddress()
+    const resolver3Address = suiResolver3Keypair.getPublicKey().toSuiAddress()
+    await this.ensureSuiBalance(resolver2Address, BigInt(2000000000)) // 2 SUI - adjusted to minimum required
+    await this.ensureSuiBalance(resolver3Address, BigInt(2000000000)) // 2 SUI - adjusted to minimum required
 
     // Wait for initial transaction confirmation
     await new Promise(resolve => setTimeout(resolve, 3000))
