@@ -1,0 +1,23 @@
+{
+  "name": "unite-sui-swap-verification",
+  "version": "1.0.0",
+  "description": "Cross-chain swap verification between Ethereum Sepolia and Sui testnet",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsx verify-bidirectional-swap.ts",
+    "build": "tsc",
+    "dev": "tsx verify-bidirectional-swap.ts"
+  },
+  "dependencies": {
+    "@mysten/sui": "^1.0.0",
+    "viem": "^2.0.0",
+    "wagmi": "^2.0.0",
+    "ethers": "^6.0.0",
+    "dotenv": "^16.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+} 
