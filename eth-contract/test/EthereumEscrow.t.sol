@@ -5,9 +5,29 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "../src/core/EthereumEscrow.sol";
 import "../src/interfaces/IEthereumEscrow.sol";
+import "openzeppelin-contracts/token/ERC20/ERC20.sol";
+
+// Mock WETH contract for testing
+contract MockWETH is ERC20 {
+    constructor() ERC20("Wrapped Ether", "WETH") {}
+    
+    function deposit() external payable {
+        _mint(msg.sender, msg.value);
+    }
+    
+    function withdraw(uint256 amount) external {
+        _burn(msg.sender, amount);
+        payable(msg.sender).transfer(amount);
+    }
+    
+    receive() external payable {
+        _mint(msg.sender, msg.value);
+    }
+}
 
 contract EthereumEscrowTest is Test {
     EthereumEscrow public escrow;
+    MockWETH public weth;
     
     address public maker = address(0x1);
     address public taker = address(0x2);
@@ -55,9 +75,25 @@ contract EthereumEscrowTest is Test {
         uint256 amount,
         string suiOrderHash
     );
+    
+    event EscrowCreatedWithWeth(
+        bytes32 indexed escrowId,
+        address indexed maker,
+        address indexed taker,
+        uint256 amount,
+        bytes32 hashLock,
+        uint256 timeLock,
+        string suiOrderHash,
+        bool isWeth
+    );
 
     function setUp() public {
-        escrow = new EthereumEscrow();
+        // Deploy mock WETH
+        weth = new MockWETH();
+        
+        // Deploy escrow with WETH address
+        escrow = new EthereumEscrow(address(weth));
+        
         hashLock = escrow.createHashLock(secret);
         timeLock = block.timestamp + 1 hours;
         
@@ -849,5 +885,421 @@ contract EthereumEscrowTest is Test {
         assertEq(escrow.getRemainingAmount(fuzzEscrowId), 0);
         (,,,,,, bool completed,,,) = escrow.getEscrow(fuzzEscrowId);
         assertTrue(completed);
+    }
+
+    // ========== WETH ESCROW TESTS ==========
+
+    function testCreateEscrowWithWeth() public {
+        // Give maker some WETH
+        vm.deal(maker, 2 ether);
+        vm.prank(maker);
+        weth.deposit{value: 2 ether}();
+        
+        vm.startPrank(maker);
+        
+        // Approve escrow to spend WETH
+        weth.approve(address(escrow), amount);
+        
+        // Don't check the escrowId in the event since it's calculated dynamically
+        
+        bytes32 wethEscrowId = escrow.createEscrowWithWeth(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            amount
+        );
+        
+        vm.stopPrank();
+        
+        // Verify WETH escrow was created correctly
+        (
+            address _maker,
+            address _taker,
+            uint256 _totalAmount,
+            uint256 _remainingAmount,
+            bytes32 _hashLock,
+            uint256 _timeLock,
+            bool _completed,
+            bool _refunded,
+            uint256 _createdAt,
+            string memory _suiOrderHash,
+            bool _isWeth
+        ) = escrow.getEscrowWithWethInfo(wethEscrowId);
+        
+        assertEq(_maker, maker);
+        assertEq(_taker, taker);
+        assertEq(_totalAmount, amount);
+        assertEq(_remainingAmount, amount);
+        assertEq(_hashLock, hashLock);
+        assertEq(_timeLock, timeLock);
+        assertFalse(_completed);
+        assertFalse(_refunded);
+        assertEq(_createdAt, block.timestamp);
+        assertEq(_suiOrderHash, suiOrderHash);
+        assertTrue(_isWeth);
+        
+        // Verify WETH was transferred to escrow
+        assertEq(weth.balanceOf(address(escrow)), amount);
+        assertEq(weth.balanceOf(maker), 2 ether - amount);
+    }
+
+    function testCreateEscrowWithWethZeroAmount() public {
+        vm.startPrank(maker);
+        
+        vm.expectRevert(IEthereumEscrow.InvalidWethAmount.selector);
+        escrow.createEscrowWithWeth(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            0
+        );
+        
+        vm.stopPrank();
+    }
+
+    function testCreateEscrowWithWethInsufficientAllowance() public {
+        // Give maker some WETH but don't approve
+        vm.deal(maker, 2 ether);
+        vm.prank(maker);
+        weth.deposit{value: 2 ether}();
+        
+        vm.startPrank(maker);
+        
+        // Don't approve or approve less than needed
+        weth.approve(address(escrow), amount - 1);
+        
+        vm.expectRevert(IEthereumEscrow.InsufficientWethAllowance.selector);
+        escrow.createEscrowWithWeth(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            amount
+        );
+        
+        vm.stopPrank();
+    }
+
+    function testFillEscrowWithWeth() public {
+        // Setup: Create WETH escrow
+        vm.deal(maker, 2 ether);
+        vm.prank(maker);
+        weth.deposit{value: 2 ether}();
+        
+        vm.prank(maker);
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        bytes32 wethEscrowId = escrow.createEscrowWithWeth(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            amount
+        );
+        
+        // Fill the WETH escrow
+        uint256 fillAmount = amount / 2;
+        uint256 initialWethBalance = weth.balanceOf(taker);
+        
+        vm.startPrank(taker);
+        
+        vm.expectEmit(true, true, true, true);
+        emit EscrowPartiallyFilled(wethEscrowId, taker, fillAmount, amount - fillAmount, secret, suiOrderHash);
+        
+        escrow.fillEscrowWithWeth(wethEscrowId, fillAmount, secret);
+        
+        vm.stopPrank();
+        
+        // Verify WETH was transferred to taker
+        assertEq(weth.balanceOf(taker), initialWethBalance + fillAmount);
+        assertEq(weth.balanceOf(address(escrow)), amount - fillAmount);
+        
+        // Verify escrow state
+        (,,,uint256 remainingAmount,,,,,,,) = escrow.getEscrowWithWethInfo(wethEscrowId);
+        assertEq(remainingAmount, amount - fillAmount);
+    }
+
+    function testFillEscrowWithWethComplete() public {
+        // Setup: Create WETH escrow
+        vm.deal(maker, 2 ether);
+        vm.prank(maker);
+        weth.deposit{value: 2 ether}();
+        
+        vm.prank(maker);
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        bytes32 wethEscrowId = escrow.createEscrowWithWeth(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            amount
+        );
+        
+        // Fill the entire WETH escrow
+        uint256 initialWethBalance = weth.balanceOf(taker);
+        
+        vm.startPrank(taker);
+        
+        vm.expectEmit(true, true, true, true);
+        emit EscrowCompleted(wethEscrowId, taker, secret, suiOrderHash);
+        
+        escrow.fillEscrowWithWeth(wethEscrowId, amount, secret);
+        
+        vm.stopPrank();
+        
+        // Verify WETH was transferred to taker
+        assertEq(weth.balanceOf(taker), initialWethBalance + amount);
+        assertEq(weth.balanceOf(address(escrow)), 0);
+        
+        // Verify escrow is completed
+        (,,,,,,bool completed,bool refunded,,,) = escrow.getEscrowWithWethInfo(wethEscrowId);
+        assertTrue(completed);
+        assertFalse(refunded);
+    }
+
+    function testFillEscrowWithWethOnlyWethEscrows() public {
+        // Create regular ETH escrow
+        vm.prank(maker);
+        bytes32 ethEscrowId = escrow.createEscrow{value: amount}(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash
+        );
+        
+        // Try to fill ETH escrow with WETH function
+        vm.startPrank(taker);
+        
+        vm.expectRevert(IEthereumEscrow.InvalidWethAmount.selector);
+        escrow.fillEscrowWithWeth(ethEscrowId, amount, secret);
+        
+        vm.stopPrank();
+    }
+
+    function testRefundWethEscrow() public {
+        // Setup: Create WETH escrow
+        vm.deal(maker, 2 ether);
+        vm.prank(maker);
+        weth.deposit{value: 2 ether}();
+        
+        vm.prank(maker);
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        bytes32 wethEscrowId = escrow.createEscrowWithWeth(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            amount
+        );
+        
+        // Fast forward past expiry
+        vm.warp(timeLock + 1);
+        
+        uint256 initialWethBalance = weth.balanceOf(maker);
+        
+        // Refund the WETH escrow
+        vm.startPrank(maker);
+        
+        vm.expectEmit(true, true, true, true);
+        emit EscrowRefunded(wethEscrowId, maker, amount, suiOrderHash);
+        
+        escrow.refundEscrow(wethEscrowId);
+        
+        vm.stopPrank();
+        
+        // Verify WETH was returned to maker
+        assertEq(weth.balanceOf(maker), initialWethBalance + amount);
+        assertEq(weth.balanceOf(address(escrow)), 0);
+        
+        // Verify escrow is refunded
+        (,,,,,,bool completed, bool refunded,,,) = escrow.getEscrowWithWethInfo(wethEscrowId);
+        assertFalse(completed);
+        assertTrue(refunded);
+    }
+
+    function testRefundPartiallyFilledWethEscrow() public {
+        // Setup: Create WETH escrow
+        vm.deal(maker, 2 ether);
+        vm.prank(maker);
+        weth.deposit{value: 2 ether}();
+        
+        vm.prank(maker);
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        bytes32 wethEscrowId = escrow.createEscrowWithWeth(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            amount
+        );
+        
+        // Partially fill
+        uint256 fillAmount = amount / 3;
+        vm.prank(taker);
+        escrow.fillEscrowWithWeth(wethEscrowId, fillAmount, secret);
+        
+        // Fast forward past expiry
+        vm.warp(timeLock + 1);
+        
+        uint256 initialWethBalance = weth.balanceOf(maker);
+        uint256 expectedRefund = amount - fillAmount;
+        
+        // Refund the remaining WETH
+        vm.prank(maker);
+        escrow.refundEscrow(wethEscrowId);
+        
+        // Verify only remaining WETH was returned
+        assertEq(weth.balanceOf(maker), initialWethBalance + expectedRefund);
+        assertEq(weth.balanceOf(address(escrow)), 0);
+    }
+
+    function testMixedEthAndWethEscrows() public {
+        // Create different hash locks for different escrows
+        bytes32 ethSecret = keccak256("eth_secret");
+        bytes32 wethSecret = keccak256("weth_secret");
+        bytes32 ethHashLock = escrow.createHashLock(ethSecret);
+        bytes32 wethHashLock = escrow.createHashLock(wethSecret);
+        
+        // Create ETH escrow
+        vm.prank(maker);
+        bytes32 ethEscrowId = escrow.createEscrow{value: amount}(
+            ethHashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash
+        );
+        
+        // Create WETH escrow
+        vm.deal(maker, 2 ether);
+        vm.prank(maker);
+        weth.deposit{value: 2 ether}();
+        
+        vm.prank(maker);
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        bytes32 wethEscrowId = escrow.createEscrowWithWeth(
+            wethHashLock,
+            timeLock + 1 hours, // Different timelock to avoid collision
+            payable(taker),
+            "different-order",
+            amount
+        );
+        
+        // Verify both escrows exist and have correct types
+        escrow.getEscrow(ethEscrowId); // Should not revert
+        (,,,,,,,,,, bool isWeth) = escrow.getEscrowWithWethInfo(wethEscrowId);
+        assertTrue(isWeth);
+        
+        // Fill ETH escrow with regular fill
+        vm.prank(taker);
+        escrow.fillEscrow(ethEscrowId, amount, ethSecret);
+        
+        // Fill WETH escrow with WETH fill (use different secret)
+        vm.prank(taker);
+        escrow.fillEscrowWithWeth(wethEscrowId, amount, wethSecret);
+        
+        // Verify both completed
+        (,,,,,, bool ethCompleted,,,) = escrow.getEscrow(ethEscrowId);
+        (,,,,,, bool wethCompleted,,,, bool wethIsWeth) = escrow.getEscrowWithWethInfo(wethEscrowId);
+        
+        assertTrue(ethCompleted);
+        assertTrue(wethCompleted);
+        assertTrue(wethIsWeth);
+    }
+
+    function testGetEscrowWithWethInfoForRegularEscrow() public {
+        // Create regular ETH escrow
+        vm.prank(maker);
+        bytes32 ethEscrowId = escrow.createEscrow{value: amount}(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash
+        );
+        
+        // Should be able to get info with WETH function
+        (
+            address _maker,
+            address _taker,
+            uint256 _totalAmount,
+            uint256 _remainingAmount,
+            bytes32 _hashLock,
+            uint256 _timeLock,
+            bool _completed,
+            bool _refunded,
+            uint256 _createdAt,
+            string memory _suiOrderHash,
+            bool _isWeth
+        ) = escrow.getEscrowWithWethInfo(ethEscrowId);
+        
+        assertEq(_maker, maker);
+        assertEq(_taker, taker);
+        assertEq(_totalAmount, amount);
+        assertEq(_remainingAmount, amount);
+        assertEq(_hashLock, hashLock);
+        assertEq(_timeLock, timeLock);
+        assertFalse(_completed);
+        assertFalse(_refunded);
+        assertEq(_createdAt, block.timestamp);
+        assertEq(_suiOrderHash, suiOrderHash);
+        assertFalse(_isWeth); // Regular ETH escrow
+    }
+
+    function testFuzzWethEscrowOperations(uint256 _amount, uint256 _fillRatio) public {
+        // Bound inputs
+        _amount = bound(_amount, 1 ether, 100 ether);
+        _fillRatio = bound(_fillRatio, 1, 100); // 1-100%
+        
+        uint256 fillAmount = (_amount * _fillRatio) / 100;
+        
+        // Setup: Give maker WETH
+        vm.deal(maker, _amount + 1 ether);
+        vm.prank(maker);
+        weth.deposit{value: _amount + 1 ether}();
+        
+        // Create WETH escrow
+        vm.prank(maker);
+        weth.approve(address(escrow), _amount);
+        
+        vm.prank(maker);
+        bytes32 wethEscrowId = escrow.createEscrowWithWeth(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            _amount
+        );
+        
+        // Fill escrow
+        uint256 initialBalance = weth.balanceOf(taker);
+        vm.prank(taker);
+        escrow.fillEscrowWithWeth(wethEscrowId, fillAmount, secret);
+        
+        // Verify fill
+        assertEq(weth.balanceOf(taker), initialBalance + fillAmount);
+        
+        (,,,uint256 remainingAmount,,,,,,,) = escrow.getEscrowWithWethInfo(wethEscrowId);
+        assertEq(remainingAmount, _amount - fillAmount);
+        
+        // If not fully filled, test refund of remainder
+        if (fillAmount < _amount) {
+            vm.warp(timeLock + 1);
+            
+            uint256 makerInitialBalance = weth.balanceOf(maker);
+            vm.prank(maker);
+            escrow.refundEscrow(wethEscrowId);
+            
+            assertEq(weth.balanceOf(maker), makerInitialBalance + (_amount - fillAmount));
+        }
     }
 }

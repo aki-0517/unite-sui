@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
+
 /**
  * @title IEthereumEscrow
  * @dev Interface for Ethereum escrow contract used in cross-chain atomic swaps
@@ -33,6 +35,17 @@ interface IEthereumEscrow {
         string suiOrderHash
     );
     
+    event EscrowCreatedWithWeth(
+        bytes32 indexed escrowId,
+        address indexed maker,
+        address indexed taker,
+        uint256 amount,
+        bytes32 hashLock,
+        uint256 timeLock,
+        string suiOrderHash,
+        bool isWeth
+    );
+    
     event EscrowRefunded(
         bytes32 indexed escrowId,
         address indexed maker,
@@ -57,6 +70,9 @@ interface IEthereumEscrow {
     error InvalidFillAmount();
     error SecretAlreadyUsed();
     error TransferFailed();
+    error InvalidWethAmount();
+    error WethTransferFailed();
+    error InsufficientWethAllowance();
 
     // Core functions
     function createEscrow(
@@ -72,6 +88,20 @@ interface IEthereumEscrow {
         bytes32 secret
     ) external;
     
+    function createEscrowWithWeth(
+        bytes32 hashLock,
+        uint256 timeLock,
+        address payable taker,
+        string calldata suiOrderHash,
+        uint256 wethAmount
+    ) external returns (bytes32 escrowId);
+
+    function fillEscrowWithWeth(
+        bytes32 escrowId,
+        uint256 amount,
+        bytes32 secret
+    ) external;
+
     function completeEscrow(
         bytes32 escrowId,
         bytes32 secret
@@ -98,6 +128,20 @@ interface IEthereumEscrow {
         bool refunded,
         uint256 createdAt,
         string memory suiOrderHash
+    );
+
+    function getEscrowWithWethInfo(bytes32 escrowId) external view returns (
+        address maker,
+        address taker,
+        uint256 totalAmount,
+        uint256 remainingAmount,
+        bytes32 hashLock,
+        uint256 timeLock,
+        bool completed,
+        bool refunded,
+        uint256 createdAt,
+        string memory suiOrderHash,
+        bool isWeth
     );
     
     function getRemainingAmount(bytes32 escrowId) external view returns (uint256);

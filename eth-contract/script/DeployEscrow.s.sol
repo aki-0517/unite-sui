@@ -15,10 +15,14 @@ contract DeployEscrow is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        // Deploy EthereumEscrow contract
-        EthereumEscrow escrow = new EthereumEscrow();
+        // Sepolia WETH address
+        address wethAddress = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9;
+        
+        // Deploy EthereumEscrow contract with WETH support
+        EthereumEscrow escrow = new EthereumEscrow(wethAddress);
         
         console.log("EthereumEscrow deployed at:", address(escrow));
+        console.log("WETH address:", wethAddress);
         console.log("Deployer address:", vm.addr(deployerPrivateKey));
         console.log("Block number:", block.number);
         console.log("Block timestamp:", block.timestamp);
@@ -27,8 +31,9 @@ contract DeployEscrow is Script {
         
         // Log deployment information
         console.log("\n=== Deployment Summary ===");
-        console.log("Contract: EthereumEscrow");
+        console.log("Contract: EthereumEscrow (WETH-enabled)");
         console.log("Address:", address(escrow));
+        console.log("WETH Address:", wethAddress);
         console.log("Network: Sepolia Testnet");
         console.log("Gas used: Check transaction receipt");
         
