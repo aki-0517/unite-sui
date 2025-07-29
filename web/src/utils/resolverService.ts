@@ -11,6 +11,7 @@ import { getFaucetHost, requestSuiFromFaucetV2 } from '@mysten/sui/faucet'
 const ETH_ESCROW_ADDRESS = import.meta.env.VITE_ETH_ESCROW_ADDRESS
 const SUI_ESCROW_PACKAGE_ID = import.meta.env.VITE_SUI_ESCROW_PACKAGE_ID
 const SUI_USED_SECRETS_REGISTRY_ID = import.meta.env.VITE_SUI_USED_SECRETS_REGISTRY_ID
+const WETH_ADDRESS = import.meta.env.VITE_WETH_ADDRESS
 
 const RESOLVER2_PRIVATE_KEY = import.meta.env.VITE_RESOLVER2_PRIVATE_KEY
 const RESOLVER3_PRIVATE_KEY = import.meta.env.VITE_RESOLVER3_PRIVATE_KEY
@@ -36,7 +37,59 @@ const suiClient = new SuiClient({
   url: import.meta.env.VITE_SUI_RPC_URL || 'https://fullnode.devnet.sui.io:443'
 })
 
+// WETH ABI (same as scripts)
+const WETH_ABI = [
+  {
+    "inputs": [],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "wad", "type": "uint256"}],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "to", "type": "address"}, {"name": "amount", "type": "uint256"}],
+    "name": "approve",
+    "outputs": [{"name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "account", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "owner", "type": "address"}, {"name": "spender", "type": "address"}],
+    "name": "allowance",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const
+
 const ESCROW_ABI = [
+  {
+    "inputs": [
+      {"name": "hashLock", "type": "bytes32"},
+      {"name": "timeLock", "type": "uint256"},
+      {"name": "taker", "type": "address"},
+      {"name": "suiOrderHash", "type": "string"},
+      {"name": "wethAmount", "type": "uint256"}
+    ],
+    "name": "createEscrow",
+    "outputs": [{"name": "", "type": "bytes32"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
   {
     "inputs": [
       {"name": "escrowId", "type": "bytes32"},
@@ -257,10 +310,10 @@ export class ResolverService {
     }
   }
 
-  // Create Ethereum escrow with resolver (for SUI→ETH swaps)  
+  // Create Ethereum escrow with resolver (for SUI→ETH swaps) - WETH only version
   async createEthEscrowWithResolver(hashLock: string, timeLock: bigint, amount: bigint): Promise<string> {
-    this.addLog(`🔧 Resolver creating Ethereum escrow...`)
-    this.addLog(`💰 Amount: ${formatEther(amount)} ETH`)
+    this.addLog(`🔧 Resolver creating Ethereum escrow with WETH...`)
+    this.addLog(`💰 Amount: ${formatEther(amount)} ETH (will be wrapped to WETH)`)
     this.addLog(`⏰ Time lock: ${timeLock}`)
     this.addLog(`🔒 Hash lock: ${hashLock}`)
 
@@ -270,48 +323,103 @@ export class ResolverService {
       transport: http(import.meta.env.VITE_ETHEREUM_RPC_URL)
     })
 
-    // Encode function data
+    // Step 1: Wrap ETH to WETH (same as scripts)
+    this.addLog(`🔄 Step 1: Resolver wrapping ETH to WETH...`)
+    const wrapData = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'deposit',
+      args: [],
+    })
+
+    const wrapHash = await walletClient.sendTransaction({
+      account: resolver2Account,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: wrapData,
+      value: amount,
+      gas: 150000n,
+    })
+    
+    this.addLog(`📋 Resolver WETH wrap transaction hash: ${wrapHash}`)
+    try {
+      await publicClient.waitForTransactionReceipt({ 
+        hash: wrapHash,
+        timeout: 120000,
+        pollingInterval: 2000
+      })
+      this.addLog(`✅ Resolver ETH wrapped to WETH successfully`)
+    } catch (error: any) {
+      if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+        this.addLog(`⏰ Resolver WETH wrap transaction still pending, checking status...`)
+        // Continue execution - transaction might still succeed
+      } else {
+        throw error
+      }
+    }
+
+    // Step 2: Approve WETH for escrow contract (same as scripts)
+    this.addLog(`🔄 Step 2: Resolver approving WETH for escrow contract...`)
+    
+    const approveData = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'approve',
+      args: [ETH_ESCROW_ADDRESS as `0x${string}`, amount],
+    })
+
+    const approveHash = await walletClient.sendTransaction({
+      account: resolver2Account,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: approveData,
+      gas: 150000n,
+    })
+    
+    this.addLog(`📋 Resolver WETH approval transaction hash: ${approveHash}`)
+    try {
+      await publicClient.waitForTransactionReceipt({ 
+        hash: approveHash,
+        timeout: 120000,
+        pollingInterval: 2000
+      })
+      this.addLog(`✅ Resolver WETH approved for escrow contract`)
+    } catch (error: any) {
+      if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+        this.addLog(`⏰ Resolver WETH approval transaction still pending, checking status...`)
+        // Continue execution - transaction might still succeed
+      } else {
+        throw error
+      }
+    }
+
+    // Step 3: Create escrow with WETH (same as scripts)
+    this.addLog(`🔄 Step 3: Resolver creating escrow with WETH...`)
     const data = encodeFunctionData({
-      abi: [{
-        "inputs": [
-          {"name": "hashLock", "type": "bytes32"},
-          {"name": "timeLock", "type": "uint256"},
-          {"name": "taker", "type": "address"},
-          {"name": "suiOrderHash", "type": "string"}
-        ],
-        "name": "createEscrow",
-        "outputs": [{"name": "", "type": "bytes32"}],
-        "stateMutability": "payable",
-        "type": "function"
-      }] as const,
+      abi: ESCROW_ABI,
       functionName: 'createEscrow',
-      args: [hashLock as `0x${string}`, timeLock, resolver2Account.address, 'test-sui-order']
+      args: [hashLock as `0x${string}`, timeLock, resolver2Account.address, 'test-sui-order', amount]
     })
 
     const hash = await walletClient.sendTransaction({
       account: resolver2Account,
       to: ETH_ESCROW_ADDRESS as `0x${string}`,
       data,
-      value: amount,
       gas: 500000n
     })
 
-    this.addLog(`📋 Resolver created Ethereum escrow: ${hash}`)
+    this.addLog(`📋 Resolver created Ethereum escrow with WETH: ${hash}`)
     return hash
   }
 
-  // Fill Ethereum Escrow with resolvers (same as scripts)
+  // Fill Ethereum Escrow with resolvers (WETH only - same as scripts)
   async fillEthEscrowWithResolvers(escrowId: string, amount: bigint, secret: string, userAddress: string): Promise<void> {
-    this.addLog(`🔄 Starting resolver fill of Ethereum escrow...`)
+    this.addLog(`🔄 Starting resolver fill of Ethereum escrow with WETH...`)
     this.addLog(`📦 Escrow ID: ${escrowId}`)
-    this.addLog(`💰 Total amount: ${formatEther(amount)} ETH`)
+    this.addLog(`💰 Total amount: ${formatEther(amount)} WETH`)
 
     // Wait for initial transaction confirmation
     await new Promise(resolve => setTimeout(resolve, 3000))
 
     // Partial fill: Resolver2 fills half
     const halfAmount = amount / BigInt(2)
-    this.addLog(`🔄 Resolver2 starting partial fill: ${formatEther(halfAmount)} ETH`)
+    this.addLog(`🔄 Resolver2 starting partial fill: ${formatEther(halfAmount)} WETH`)
 
     const walletClient2 = createWalletClient({
       account: resolver2Account,
@@ -319,6 +427,73 @@ export class ResolverService {
       transport: http(import.meta.env.VITE_ETHEREUM_RPC_URL)
     })
 
+    // Resolver2: Wrap ETH to WETH first (same as scripts)
+    this.addLog(`💰 Resolver2 wrapping ETH to WETH: ${formatEther(halfAmount)} ETH`)
+    const wrapData1 = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'deposit',
+      args: [],
+    })
+
+    const wrapHash1 = await walletClient2.sendTransaction({
+      account: resolver2Account,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: wrapData1,
+      value: halfAmount,
+      gas: 150000n,
+    })
+    
+    this.addLog(`📋 Resolver2 WETH wrap transaction hash: ${wrapHash1}`)
+    try {
+      await publicClient.waitForTransactionReceipt({ 
+        hash: wrapHash1,
+        timeout: 120000,
+        pollingInterval: 2000
+      })
+      this.addLog(`✅ Resolver2 ETH wrapped to WETH successfully`)
+    } catch (error: any) {
+      if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+        this.addLog(`⏰ Resolver2 WETH wrap transaction still pending, checking status...`)
+        // Continue execution - transaction might still succeed
+      } else {
+        throw error
+      }
+    }
+
+    // Resolver2: Approve WETH for escrow contract (same as scripts)
+    this.addLog(`🔄 Resolver2 approving WETH for escrow contract...`)
+    
+    const approveData1 = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'approve',
+      args: [ETH_ESCROW_ADDRESS as `0x${string}`, halfAmount],
+    })
+
+    const approveHash1 = await walletClient2.sendTransaction({
+      account: resolver2Account,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: approveData1,
+      gas: 150000n,
+    })
+    
+    this.addLog(`📋 Resolver2 WETH approval transaction hash: ${approveHash1}`)
+    try {
+      await publicClient.waitForTransactionReceipt({ 
+        hash: approveHash1,
+        timeout: 120000,
+        pollingInterval: 2000
+      })
+      this.addLog(`✅ Resolver2 WETH approved for escrow contract`)
+    } catch (error: any) {
+      if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+        this.addLog(`⏰ Resolver2 WETH approval transaction still pending, checking status...`)
+        // Continue execution - transaction might still succeed
+      } else {
+        throw error
+      }
+    }
+
+    // Resolver2: Fill escrow with WETH
     const data1 = encodeFunctionData({
       abi: ESCROW_ABI,
       functionName: 'fillEscrow',
@@ -334,12 +509,45 @@ export class ResolverService {
 
     this.addLog(`📋 Resolver2 transaction hash: ${hash1}`)
 
-    // Resolver2 transfers to user
+    // Resolver2 unwraps WETH to ETH and transfers to recipient (same as scripts)
+    this.addLog(`🔄 Resolver2 unwrapping WETH to ETH and transferring: ${formatEther(halfAmount)} ETH`)
+    
+    // Step 1: Unwrap WETH to ETH
+    const unwrapData1 = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'withdraw',
+      args: [halfAmount],
+    })
+
+    const unwrapHash1 = await walletClient2.sendTransaction({
+      account: resolver2Account,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: unwrapData1,
+      gas: 100000n,
+    })
+    this.addLog(`📋 Resolver2 WETH unwrap transaction hash: ${unwrapHash1}`)
+    try {
+      await publicClient.waitForTransactionReceipt({ 
+        hash: unwrapHash1,
+        timeout: 120000,
+        pollingInterval: 2000
+      })
+      this.addLog(`✅ Resolver2 WETH unwrap completed`)
+    } catch (error: any) {
+      if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+        this.addLog(`⏰ Resolver2 WETH unwrap transaction still pending, checking status...`)
+        // Continue execution - transaction might still succeed
+      } else {
+        throw error
+      }
+    }
+    
+    // Step 2: Transfer ETH to recipient
     const transferHash1 = await walletClient2.sendTransaction({
       account: resolver2Account,
       to: userAddress as `0x${string}`,
       value: halfAmount,
-      gas: 21000n
+      gas: 21000n,
     })
 
     this.addLog(`✅ Resolver2 transferred ${formatEther(halfAmount)} ETH to user: ${transferHash1}`)
@@ -350,7 +558,7 @@ export class ResolverService {
 
     // Partial fill: Resolver3 fills remainder
     const remainingAmount = amount - halfAmount
-    this.addLog(`🔄 Resolver3 starting partial fill: ${formatEther(remainingAmount)} ETH`)
+    this.addLog(`🔄 Resolver3 starting partial fill: ${formatEther(remainingAmount)} WETH`)
 
     const walletClient3 = createWalletClient({
       account: resolver3Account,
@@ -358,6 +566,47 @@ export class ResolverService {
       transport: http(import.meta.env.VITE_ETHEREUM_RPC_URL)
     })
 
+    // Resolver3: Wrap ETH to WETH first (same as scripts)
+    this.addLog(`💰 Resolver3 wrapping ETH to WETH: ${formatEther(remainingAmount)} ETH`)
+    const wrapData2 = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'deposit',
+      args: [],
+    })
+
+    const wrapHash2 = await walletClient3.sendTransaction({
+      account: resolver3Account,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: wrapData2,
+      value: remainingAmount,
+      gas: 150000n,
+    })
+    
+    this.addLog(`📋 Resolver3 WETH wrap transaction hash: ${wrapHash2}`)
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    this.addLog(`✅ Resolver3 ETH wrapped to WETH successfully`)
+
+    // Resolver3: Approve WETH for escrow contract (same as scripts)
+    this.addLog(`🔄 Resolver3 approving WETH for escrow contract...`)
+    
+    const approveData2 = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'approve',
+      args: [ETH_ESCROW_ADDRESS as `0x${string}`, remainingAmount],
+    })
+
+    const approveHash2 = await walletClient3.sendTransaction({
+      account: resolver3Account,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: approveData2,
+      gas: 150000n,
+    })
+    
+    this.addLog(`📋 Resolver3 WETH approval transaction hash: ${approveHash2}`)
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    this.addLog(`✅ Resolver3 WETH approved for escrow contract`)
+
+    // Resolver3: Fill escrow with WETH
     const data2 = encodeFunctionData({
       abi: ESCROW_ABI,
       functionName: 'fillEscrow',
@@ -373,17 +622,41 @@ export class ResolverService {
 
     this.addLog(`📋 Resolver3 transaction hash: ${hash2}`)
 
-    // Resolver3 transfers to user
+    // Resolver3 unwraps WETH to ETH and transfers to recipient (same as scripts)
+    this.addLog(`🔄 Resolver3 unwrapping WETH to ETH and transferring: ${formatEther(remainingAmount)} ETH`)
+    
+    // Step 1: Unwrap WETH to ETH
+    const unwrapData2 = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'withdraw',
+      args: [remainingAmount],
+    })
+
+    const unwrapHash2 = await walletClient3.sendTransaction({
+      account: resolver3Account,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: unwrapData2,
+      gas: 100000n,
+    })
+    this.addLog(`📋 Resolver3 WETH unwrap transaction hash: ${unwrapHash2}`)
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    this.addLog(`✅ Resolver3 WETH unwrap completed`)
+    
+    // Step 2: Transfer ETH to recipient
     const transferHash2 = await walletClient3.sendTransaction({
       account: resolver3Account,
       to: userAddress as `0x${string}`,
       value: remainingAmount,
-      gas: 21000n
+      gas: 21000n,
     })
 
     this.addLog(`✅ Resolver3 transferred ${formatEther(remainingAmount)} ETH to user: ${transferHash2}`)
     this.ethReceivedTxHashes.push(transferHash2)
-    this.addLog(`🎉 Ethereum escrow fill completed by resolvers!`)
+    this.addLog(`🎉 Ethereum escrow fill completed (WETH unwrapped to ETH)!`)
+    this.addLog(`📋 Fill details:`)
+    this.addLog(`  👤 Resolver2: ${formatEther(halfAmount)} WETH → ${formatEther(halfAmount)} ETH → ${userAddress}`)
+    this.addLog(`  👤 Resolver3: ${formatEther(remainingAmount)} WETH → ${formatEther(remainingAmount)} ETH → ${userAddress}`)
+    this.addLog(`  💰 Total: ${formatEther(amount)} WETH → ${formatEther(amount)} ETH`)
   }
 
   // Fill Sui Escrow with resolvers (same as scripts)

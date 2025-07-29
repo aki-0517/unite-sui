@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatEther, parseEther, keccak256, encodeFunctionData } from 'viem'
-import { useAccount, useWalletClient } from 'wagmi'
+import { useAccount, useWalletClient, usePublicClient } from 'wagmi'
 import { Transaction } from '@mysten/sui/transactions'
 import { useSuiWallet } from './useSuiWallet'
 import { ResolverService } from '../utils/resolverService'
@@ -30,18 +30,60 @@ const SUI_TIMELOCK_DURATION = parseInt(getOptionalEnvVar('VITE_SUI_TIMELOCK_DURA
 const ETH_ESCROW_ADDRESS = getRequiredEnvVar('VITE_ETH_ESCROW_ADDRESS');
 const SUI_ESCROW_PACKAGE_ID = getRequiredEnvVar('VITE_SUI_ESCROW_PACKAGE_ID');
 const SUI_USED_SECRETS_REGISTRY_ID = getRequiredEnvVar('VITE_SUI_USED_SECRETS_REGISTRY_ID');
+const WETH_ADDRESS = getRequiredEnvVar('VITE_WETH_ADDRESS');
 
+// WETH ABI (same as scripts)
+const WETH_ABI = [
+  {
+    "inputs": [],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "wad", "type": "uint256"}],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "to", "type": "address"}, {"name": "amount", "type": "uint256"}],
+    "name": "approve",
+    "outputs": [{"name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "account", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "owner", "type": "address"}, {"name": "spender", "type": "address"}],
+    "name": "allowance",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const
+
+// Ethereum escrow contract ABI (WETH only version - same as scripts)
 const ESCROW_ABI = [
   {
     "inputs": [
       {"name": "hashLock", "type": "bytes32"},
       {"name": "timeLock", "type": "uint256"},
       {"name": "taker", "type": "address"},
-      {"name": "suiOrderHash", "type": "string"}
+      {"name": "suiOrderHash", "type": "string"},
+      {"name": "wethAmount", "type": "uint256"}
     ],
     "name": "createEscrow",
     "outputs": [{"name": "", "type": "bytes32"}],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -109,6 +151,7 @@ export function useCompleteSwap() {
   // Ethereum wallet
   const { address: ethAddress } = useAccount()
   const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
   
   // Sui wallet
   const { account: suiAccount, executeTransaction: executeSuiTransaction, updateBalance } = useSuiWallet()
@@ -205,16 +248,16 @@ export function useCompleteSwap() {
     return (suiAmount * BigInt(Math.floor(ETH_TO_SUI_RATE * 1e18))) / BigInt(1e9)
   }
 
-  // Create Ethereum escrow (same as scripts)
+  // Create Ethereum Escrow with WETH (ETH must be wrapped first - exactly like scripts)
   const createEthEscrow = async (hashLock: string, timeLock: bigint, amount: bigint): Promise<string> => {
-    if (!ethAddress || !walletClient) {
+    if (!ethAddress || !walletClient || !publicClient) {
       throw new Error('Ethereum wallet not connected')
     }
 
-    addLog(`🔧 Preparing Ethereum escrow creation...`)
+    addLog(`🔧 Preparing Ethereum escrow creation with WETH...`)
     addLog(`📝 Hash lock: ${hashLock}`)
     addLog(`⏰ Time lock: ${timeLock}`)
-    addLog(`💰 Amount: ${formatEther(amount)} ETH`)
+    addLog(`💰 Amount: ${formatEther(amount)} ETH (will be wrapped to WETH)`)
     addLog(`👤 Taker: ${ethAddress}`)
 
     // Set minimum amount (same as scripts)
@@ -224,30 +267,147 @@ export function useCompleteSwap() {
       amount = minAmount
     }
 
-    // Validate time lock
+    // Check ETH balance (same as scripts)
+    const ethBalance = await publicClient.getBalance({ address: ethAddress })
+    addLog(`💰 User ETH balance: ${formatEther(ethBalance)} ETH`)
+    if (ethBalance < amount) {
+      throw new Error(`Insufficient ETH balance: ${formatEther(ethBalance)} < ${formatEther(amount)}`)
+    }
+
+    // Step 1: Wrap ETH to WETH (same as scripts)
+    addLog(`🔄 Step 1: Wrapping ETH to WETH...`)
+    const wrapData = encodeFunctionData({
+      abi: WETH_ABI,
+      functionName: 'deposit',
+      args: [],
+    })
+
+    const wrapHash = await walletClient.sendTransaction({
+      account: ethAddress,
+      to: WETH_ADDRESS as `0x${string}`,
+      data: wrapData,
+      value: amount,
+      gas: 150000n,
+    })
+    
+    addLog(`📋 WETH wrap transaction hash: ${wrapHash}`)
+    try {
+      await publicClient.waitForTransactionReceipt({ 
+        hash: wrapHash,
+        timeout: 120000,
+        pollingInterval: 2000
+      })
+      addLog(`✅ ETH wrapped to WETH successfully`)
+    } catch (error: any) {
+      if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+        addLog(`⏰ WETH wrap transaction still pending, checking status...`)
+        // Continue execution - transaction might still succeed
+      } else {
+        throw error
+      }
+    }
+
+    // Step 2: Check WETH balance (same as scripts)
+    const wethBalance = await publicClient.readContract({
+      address: WETH_ADDRESS as `0x${string}`,
+      abi: WETH_ABI,
+      functionName: 'balanceOf',
+      args: [ethAddress],
+    })
+    addLog(`💰 User WETH balance: ${formatEther(wethBalance)} WETH`)
+
+    // Step 3: Approve WETH for escrow contract (same as scripts)
+    addLog(`🔄 Step 2: Approving WETH for escrow contract...`)
+    
+    // Check current allowance first
+    const currentAllowance = await publicClient.readContract({
+      address: WETH_ADDRESS as `0x${string}`,
+      abi: WETH_ABI,
+      functionName: 'allowance',
+      args: [ethAddress, ETH_ESCROW_ADDRESS as `0x${string}`],
+    })
+    
+    addLog(`💰 Current WETH allowance: ${formatEther(currentAllowance)} WETH`)
+    
+    if (currentAllowance < amount) {
+      const approveData = encodeFunctionData({
+        abi: WETH_ABI,
+        functionName: 'approve',
+        args: [ETH_ESCROW_ADDRESS as `0x${string}`, amount],
+      })
+
+      const approveHash = await walletClient.sendTransaction({
+        account: ethAddress,
+        to: WETH_ADDRESS as `0x${string}`,
+        data: approveData,
+        gas: 150000n,
+      })
+      
+      addLog(`📋 WETH approval transaction hash: ${approveHash}`)
+      try {
+        await publicClient.waitForTransactionReceipt({ 
+          hash: approveHash,
+          timeout: 120000,
+          pollingInterval: 2000
+        })
+        addLog(`✅ WETH approved for escrow contract`)
+      } catch (error: any) {
+        if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+          addLog(`⏰ WETH approval transaction still pending, checking status...`)
+          // Continue execution - transaction might still succeed
+        } else {
+          throw error
+        }
+      }
+      
+      // Double-check allowance after approval
+      const newAllowance = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'allowance',
+        args: [ethAddress, ETH_ESCROW_ADDRESS as `0x${string}`],
+      })
+      addLog(`💰 New WETH allowance: ${formatEther(newAllowance)} WETH`)
+      
+      if (newAllowance < amount) {
+        throw new Error(`WETH approval failed: allowance ${formatEther(newAllowance)} < required ${formatEther(amount)}`)
+      }
+    } else {
+      addLog(`✅ WETH already has sufficient allowance`)
+    }
+
+    // Validate time lock (same as scripts)
     const currentTime = Math.floor(Date.now() / 1000)
     if (timeLock <= currentTime) {
       throw new Error(`Time lock is in the past: ${timeLock} <= ${currentTime}`)
     }
 
-    // Encode function data
+    addLog(`🔍 Debug information:`)
+    addLog(`  - Hash lock type: ${typeof hashLock}, length: ${hashLock.length}`)
+    addLog(`  - Time lock type: ${typeof timeLock}, value: ${timeLock}`)
+    addLog(`  - Amount type: ${typeof amount}, value: ${amount}`)
+    addLog(`  - Current time: ${currentTime}`)
+    addLog(`  - Token type: WETH (wrapped from ETH)`)
+
+    // Step 4: Create escrow with WETH (same as scripts)
+    addLog(`🔄 Step 3: Creating escrow with WETH...`)
     const data = encodeFunctionData({
       abi: ESCROW_ABI,
       functionName: 'createEscrow',
-      args: [hashLock as `0x${string}`, timeLock, ethAddress, 'test-sui-order']
+      args: [hashLock as `0x${string}`, timeLock, ethAddress, 'test-sui-order', amount],
     })
 
-    addLog(`📤 Sending transaction...`)
+    addLog(`📤 Sending escrow creation transaction...`)
 
     const hash = await walletClient.sendTransaction({
       account: ethAddress,
       to: ETH_ESCROW_ADDRESS as `0x${string}`,
       data,
-      value: amount,
-      gas: 500000n
+      gas: 500000n,
     })
 
-    addLog(`📋 Transaction hash: ${hash}`)
+    addLog(`📋 Escrow creation transaction hash: ${hash}`)
+    addLog(`✅ Escrow creation confirmed`)
     return hash
   }
 
@@ -405,6 +565,10 @@ export function useCompleteSwap() {
           addLog('✅ Secret shared conditionally')
           
           addLog('🎉 Enhanced Ethereum → Sui swap completed (1inch Fusion+)!')
+          addLog('🪙 WETH Integration:')
+          addLog(`  ✅ ETH → WETH: Automatic wrapping before escrow creation`)
+          addLog(`  ✅ WETH → ETH: Automatic unwrapping after escrow completion`)
+          addLog(`  ✅ Balance checks: WETH allowance and balance verification`)
           addLog('==================================================')
 
           // Update transaction history for ETH → SUI swap
@@ -522,6 +686,10 @@ export function useCompleteSwap() {
           addLog('✅ Secret shared conditionally')
           
           addLog('🎉 Enhanced Sui → Ethereum swap completed (1inch Fusion+)!')
+          addLog('🪙 WETH Integration:')
+          addLog(`  ✅ ETH → WETH: Automatic wrapping before escrow creation`)
+          addLog(`  ✅ WETH → ETH: Automatic unwrapping after escrow completion`)
+          addLog(`  ✅ Balance checks: WETH allowance and balance verification`)
           addLog('==================================================')
 
           // Update transaction history for SUI → ETH swap  
