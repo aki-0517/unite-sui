@@ -1,4 +1,4 @@
-# 1inch Fusion+ integration Ethereum <> Sui
+# SuiFusion+ (1inch Fusion+ integration Ethereum <> Sui)
 
 A cross-chain atomic swap implementation between Ethereum Sepolia and Sui testnet, integrated with 1inch Fusion＋
 

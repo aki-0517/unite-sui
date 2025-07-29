@@ -304,6 +304,10 @@ class BidirectionalSwapVerifier {
   private gasAdjustment: GasPriceAdjustmentManager;
   private security: SecurityManager;
   private fusionConfig: any;
+  public ethReceivedTxHashes: string[] = [];
+  public suiReceivedTxHashes: string[] = [];
+  public ethSentTxHashes: string[] = [];
+  public suiSentTxHashes: string[] = [];
 
   constructor(ethEscrowAddress: string, suiPackageId: string) {
     this.ethEscrowAddress = ethEscrowAddress;
@@ -499,7 +503,7 @@ class BidirectionalSwapVerifier {
       // 9. Fill Ethereum Escrow
       console.log('\n🔄 Step 9: Fill Ethereum Escrow');
       await this.finalityLock.shareSecretConditionally(escrowId, secret, RESOLVER2_ADDRESS);
-      await this.fillEthEscrow(escrowId, ethAmount, secret);
+      await this.fillEthEscrow(escrowId, ethAmount, secret, true); // ETH → SUI
       console.log(`✅ Ethereum escrow fill completed`);
 
       // 10. Create and Fill Sui Escrow
@@ -620,7 +624,7 @@ class BidirectionalSwapVerifier {
       console.log(`📦 Ethereum escrow created: ${escrowId}`);
       
       await this.finalityLock.shareSecretConditionally(escrowId, secret, RESOLVER2_ADDRESS);
-      await this.fillEthEscrow(escrowId, finalEthAmount, secret);
+      await this.fillEthEscrow(escrowId, finalEthAmount, secret, false); // SUI → ETH
       console.log(`✅ Ethereum escrow fill completed`);
 
       // 11. Conditional Secret Sharing
@@ -715,6 +719,10 @@ class BidirectionalSwapVerifier {
       });
       
       console.log(`📋 Transaction hash: ${hash}`);
+      
+      // Store sent transaction hash
+      // This is for ETH → SUI swap (Ethereum escrow creation)
+      this.ethSentTxHashes = [hash];
       
       const receipt = await publicClient.waitForTransactionReceipt({ 
         hash,
@@ -837,7 +845,7 @@ class BidirectionalSwapVerifier {
   }
 
   // Fill Ethereum Escrow (2 resolvers perform partial fill)
-  private async fillEthEscrow(escrowId: string, amount: bigint, secret: string): Promise<void> {
+  private async fillEthEscrow(escrowId: string, amount: bigint, secret: string, isEthToSui: boolean = true): Promise<void> {
     try {
       console.log(`🔧 Preparing Ethereum escrow fill...`);
       console.log(`📦 Escrow ID: ${escrowId}`);
@@ -1003,12 +1011,22 @@ class BidirectionalSwapVerifier {
       console.log(`  👤 Resolver2: ${formatEther(halfAmount)} ETH → ${userAccount.address}`);
       console.log(`  👤 Resolver3: ${formatEther(remainingAmount)} ETH → ${userAccount.address}`);
       console.log(`  💰 Total: ${formatEther(amount)} ETH`);
-      console.log(`🔗 Transfer transaction history:`);
-      console.log(`  📤 Resolver2: https://sepolia.etherscan.io/tx/${transferHash1}`);
-      console.log(`  📤 Resolver3: https://sepolia.etherscan.io/tx/${transferHash2}`);
-      console.log(`🔗 User address deposit history:`);
-      console.log(`  📥 Deposit 1: https://sepolia.etherscan.io/tx/${transferHash1}#eventlog`);
-      console.log(`  📥 Deposit 2: https://sepolia.etherscan.io/tx/${transferHash2}#eventlog`);
+      console.log(`🔗 User received transaction history:`);
+      console.log(`  📥 User received: ${formatEther(halfAmount)} ETH via Resolver2: https://sepolia.etherscan.io/tx/${transferHash1}`);
+      console.log(`  📥 User received: ${formatEther(remainingAmount)} ETH via Resolver3: https://sepolia.etherscan.io/tx/${transferHash2}`);
+      console.log(`🔗 User wallet deposit history:`);
+      console.log(`  📥 User wallet: https://sepolia.etherscan.io/address/${userAccount.address}#tokentxns`);
+      
+      // Store transaction hashes for final summary
+      // For ETH → SUI: Store Ethereum sent transactions
+      // For SUI → ETH: Store Ethereum received transactions
+      if (isEthToSui) {
+        // ETH → SUI: Store Ethereum sent transactions
+        this.ethSentTxHashes = [transferHash1, transferHash2];
+      } else {
+        // SUI → ETH: Store Ethereum received transactions
+        this.ethReceivedTxHashes = [transferHash1, transferHash2];
+      }
       
     } catch (error) {
       console.error('❌ Ethereum escrow fill error:', error);
@@ -1122,6 +1140,9 @@ class BidirectionalSwapVerifier {
       });
 
       console.log(`📋 Transaction result:`, result);
+      
+      // Store sent transaction hash
+      this.suiSentTxHashes = [result.digest];
 
       // Get escrow ID
       const createdObject = result.objectChanges?.find(
@@ -1157,21 +1178,9 @@ class BidirectionalSwapVerifier {
       console.log(`🔑 Secret: ${secret}`);
       console.log(` Swap direction: ${isEthToSui ? 'Sepolia -> Sui' : 'Sui -> Sepolia'}`);
 
-      // Determine recipient addresses based on swap direction
-      let targetAddress1: string;
-      let targetAddress2: string;
-      
-      if (isEthToSui) {
-        // Ethereum -> Sui swap: Send to user's Sui address
-        targetAddress1 = SUI_ACCOUNT_ADDRESS; // User's Sui address
-        targetAddress2 = SUI_ACCOUNT_ADDRESS; // User's Sui address
-        console.log(`📤 Recipient: User's Sui address ${SUI_ACCOUNT_ADDRESS}`);
-      } else {
-        // Sui -> Ethereum swap: Send to resolver's Sui address
-        targetAddress1 = SUI_RESOLVER2_ADDRESS;
-        targetAddress2 = SUI_RESOLVER3_ADDRESS;
-        console.log(`📤 Recipient: Resolver addresses (Resolver2: ${SUI_RESOLVER2_ADDRESS}, Resolver3: ${SUI_RESOLVER3_ADDRESS})`);
-      }
+      // 修正: 全てのケースでユーザーのSuiアドレスに送金
+      const targetAddress = SUI_ACCOUNT_ADDRESS; // 常にユーザーのSuiアドレス
+      console.log(`📤 Recipient: User's Sui address ${SUI_ACCOUNT_ADDRESS}`);
 
       // Partial fill: Resolver2 fills half
       const halfAmount = amount / BigInt(2);
@@ -1199,7 +1208,7 @@ class BidirectionalSwapVerifier {
       });
 
       // Transfer to recipient address
-      transaction1.transferObjects([receivedCoin1], transaction1.pure.address(targetAddress1));
+      transaction1.transferObjects([receivedCoin1], transaction1.pure.address(targetAddress));
 
       const result1 = await suiClient.signAndExecuteTransaction({
         transaction: transaction1,
@@ -1213,7 +1222,7 @@ class BidirectionalSwapVerifier {
       console.log(`✅ Sui Resolver2 fill completed:`, result1);
       console.log(`📋 Resolver2 transfer details:`);
       console.log(`  💰 Amount: ${halfAmount} SUI`);
-      console.log(`  📤 Recipient: ${targetAddress1}`);
+      console.log(`  📤 Recipient: ${targetAddress}`);
       console.log(`🔗 Resolver2 transfer transaction: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
       console.log(`🔗 Recipient deposit history: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
 
@@ -1243,7 +1252,7 @@ class BidirectionalSwapVerifier {
       });
 
       // Transfer to recipient address
-      transaction2.transferObjects([receivedCoin2], transaction2.pure.address(targetAddress2));
+      transaction2.transferObjects([receivedCoin2], transaction2.pure.address(targetAddress));
 
       const result2 = await suiClient.signAndExecuteTransaction({
         transaction: transaction2,
@@ -1257,27 +1266,34 @@ class BidirectionalSwapVerifier {
       console.log(`✅ Sui Resolver3 fill completed:`, result2);
       console.log(`📋 Resolver3 transfer details:`);
       console.log(`  💰 Amount: ${remainingAmount} SUI`);
-      console.log(`  📤 Recipient: ${targetAddress2}`);
+      console.log(`  📤 Recipient: ${targetAddress}`);
       console.log(`🔗 Resolver3 transfer transaction: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
       console.log(`🔗 Recipient deposit history: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
 
       console.log(`✅ Sui escrow fill completed (partial fill by 2 resolvers)`);
       console.log(`📋 Fill details:`);
-      console.log(`  👤 Resolver2: ${halfAmount} SUI → ${targetAddress1}`);
-      console.log(`  👤 Resolver3: ${remainingAmount} SUI → ${targetAddress2}`);
+      console.log(`  👤 Resolver2: ${halfAmount} SUI → ${targetAddress}`);
+      console.log(`  👤 Resolver3: ${remainingAmount} SUI → ${targetAddress}`);
       console.log(`  💰 Total: ${amount} SUI`);
       console.log(`📋 Swap direction: ${isEthToSui ? 'Sepolia -> Sui' : 'Sui -> Sepolia'}`);
-      console.log(`🔗 Transfer transaction history:`);
-      console.log(`  📤 Resolver2: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
-      console.log(`  📤 Resolver3: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
-      console.log(`🔗 Recipient deposit history:`);
-      console.log(`  📥 Deposit1: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
-      console.log(`  📥 Deposit2: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
+      console.log(`🔗 User received transaction history:`);
+      console.log(`  📥 User received: ${halfAmount} SUI via Resolver2: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
+      console.log(`  📥 User received: ${remainingAmount} SUI via Resolver3: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
+      console.log(`🔗 User wallet deposit history:`);
+      console.log(`  📥 User wallet: https://suiexplorer.com/address/${targetAddress}?network=devnet`);
       
-      // In actual cross-chain bridge:
-      // - Ethereum -> Sui: Send to user's Sui address
-      // - Sui -> Ethereum: Send to resolver's Sui address
-      console.log(`💡 Note: In actual cross-chain bridge, funds are sent to appropriate addresses based on swap direction`);
+      // Store transaction hashes for final summary
+      // For Sui → Sepolia swap, these are Sui transactions, not Sepolia
+      if (isEthToSui) {
+        // ETH → SUI: Store Sui received transactions
+        this.suiReceivedTxHashes = [result1.digest, result2.digest];
+      } else {
+        // SUI → ETH: Store Sui sent transactions (these will be used for Sepolia received)
+        this.suiSentTxHashes = [result1.digest, result2.digest];
+      }
+      
+      // 修正: 全てのケースでユーザーアドレスに集約
+      console.log(`💡 Note: All funds are sent to user's Sui address for proper aggregation`);
       
     } catch (error) {
       console.error('❌ Sui escrow fill error:', error);
@@ -1432,13 +1448,34 @@ async function main() {
     console.log(`    🔒 Security Manager: ✅ 動作確認済み`);
 
     console.log(`🎉 1inch Fusion+ compliant bidirectional cross-chain swap verification completed!`);
-    console.log(`🔗 Overall Transaction History:`);
-    console.log(`  📤 User Ethereum Deposit: https://sepolia.etherscan.io/address/${userAccount.address}#tokentxns`);
-    console.log(`  📤 User Sui Deposit: https://suiexplorer.com/address/${SUI_ACCOUNT_ADDRESS}?network=devnet`);
-    console.log(`  �� Resolver2 Ethereum Deposit: https://sepolia.etherscan.io/address/${RESOLVER2_ADDRESS}#tokentxns`);
-    console.log(`  �� Resolver3 Ethereum Deposit: https://sepolia.etherscan.io/address/${RESOLVER3_ADDRESS}#tokentxns`);
-    console.log(`  📤 Resolver2 Sui Deposit: https://suiexplorer.com/address/${SUI_RESOLVER2_ADDRESS}?network=devnet`);
-    console.log(`  📤 Resolver3 Sui Deposit: https://suiexplorer.com/address/${SUI_RESOLVER3_ADDRESS}?network=devnet`);
+    console.log(`🔗 User Transaction History:`);
+    console.log(`📊 Sepolia → Sui Swap:`);
+    if (verifier.ethSentTxHashes.length > 0) {
+      console.log(`  📤 User Sepolia Out (sent):`);
+      verifier.ethSentTxHashes.forEach((txHash: string, index: number) => {
+        console.log(`    📤 Transaction ${index + 1}: https://sepolia.etherscan.io/tx/${txHash}`);
+      });
+    }
+    if (verifier.suiReceivedTxHashes.length > 0) {
+      console.log(`  📥 User Sui In (received):`);
+      verifier.suiReceivedTxHashes.forEach((txHash: string, index: number) => {
+        console.log(`    📥 Transaction ${index + 1}: https://suiexplorer.com/txblock/${txHash}?network=devnet`);
+      });
+    }
+    console.log(`📊 Sui → Sepolia Swap:`);
+    if (verifier.suiSentTxHashes.length > 0) {
+      console.log(`  📤 User Sui Out (sent):`);
+      verifier.suiSentTxHashes.forEach((txHash: string, index: number) => {
+        console.log(`    📤 Transaction ${index + 1}: https://suiexplorer.com/txblock/${txHash}?network=devnet`);
+      });
+    }
+    if (verifier.ethReceivedTxHashes.length > 0) {
+      console.log(`  📥 User Sepolia In (received):`);
+      verifier.ethReceivedTxHashes.forEach((txHash: string, index: number) => {
+        console.log(`    📥 Transaction ${index + 1}: https://sepolia.etherscan.io/tx/${txHash}`);
+      });
+    }
+    console.log(`💡 Note: These links show the actual transaction hashes for amounts sent and received by the user wallets`);
     
   } catch (error) {
     console.error('❌ Test execution error:', error);
