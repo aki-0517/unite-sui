@@ -1,251 +1,254 @@
 ```bash
-🔧 新しいSuiアカウントを生成しました:
-📧 アドレス: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-💡 このアドレスでフォーセットからコインを取得してください:
+> unite-sui-swap-verification@1.0.0 test
+> tsx verify-bidirectional-swap.ts
+
+🔧 Generated new Sui account:
+📧 Address: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+💡 Please get coins from the faucet at this address:
    🌐 https://suiexplorer.com/faucet
-🔄 RPC切り替え: https://ethereum-sepolia-rpc.publicnode.com
-Sui Address: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-Expected Address: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
+🔄 RPC switch: https://ethereum-sepolia-rpc.publicnode.com
+Sui Address: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+Expected Address: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
 Address Match: true
-🚀 1inch Fusion+ 準拠 双方向クロスチェーンスワップ検証開始
+🚀 Starting 1inch Fusion+ compliant bidirectional cross-chain swap verification
 ==================================================
-🛡️ Security Manager初期化:
-  🔒 Reentrancy Protection: 有効
-  👥 ホワイトリストリゾルバー: 5個
-  👑 管理者: 3個
-  🚨 緊急停止: 有効
-  🔄 アップグレード可能: 有効
+🛡️ Security Manager Initialization:
+  🔒 Reentrancy Protection: Enabled
+  👥 Whitelisted Resolvers: 5 addresses
+  👑 Administrators: 3 addresses
+  🚨 Emergency Pause: Enabled
+  🔄 Upgradeability: Enabled
 🚀 BidirectionalSwapVerifier with 1inch Fusion+ features initialized
 
-🔍 コントラクト存在確認中...
-🔍 コントラクト存在確認中...
-📍 アドレス: 0x5c38E80AbD0dCc58aa9078B9206e7dFBc7C4918E
-🌐 ネットワーク: Sepolia Testnet
-📋 バイトコード: 0x6080604052600436106100dc575f3560e01c80638259436d1161007e578063de...
-🔍 コントラクト存在確認: ✅ 存在
-✅ コントラクト存在確認完了
+🔍 Checking contract existence...
+🔍 Checking contract existence...
+📍 Address: 0x5c38E80AbD0dCc58aa9078B9206e7dFBc7C4918E
+🌐 Network: Sepolia Testnet
+📋 Bytecode: 0x6080604052600436106100dc575f3560e01c80638259436d1161007e578063de...
+🔍 Contract existence check: ✅ Exists
+✅ Contract existence check completed
 
-🔧 Suiアカウント初期化中...
-🔧 Suiアカウント初期化: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-🔍 Suiアカウント残高確認: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-💰 現在の総残高: 0
-⚠️ 残高が不足しています。faucetからトークンを取得します...
-💰 Sui faucetからトークンをリクエスト中...
-📧 アドレス: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-✅ Sui faucetからトークンを取得しました
-💰 取得後の総残高: 10000000000
-✅ Suiアカウント初期化完了
-✅ Suiアカウント初期化完了
+🔧 Initializing Sui account...
+🔧 Sui account initialization: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+🔍 Checking Sui account balance: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+💰 Current total balance: 0
+⚠️ Balance is insufficient. Getting tokens from faucet...
+💰 Requesting tokens from Sui faucet...
+📧 Address: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+✅ Obtained tokens from Sui faucet
+💰 Total balance after obtaining: 10000000000
+✅ Sui account initialization completed
+✅ Sui account initialization completed
 
-📊 高速化された双方向スワップテスト開始
+📊 Starting optimized bidirectional swap test
 ------------------------------
-🔄 Enhanced Ethereum -> Sui スワップ検証 (1inch Fusion+)...
-🔍 Enhanced Ethereum -> Sui スワップ検証開始 (1inch Fusion+)...
+🔄 Enhanced Ethereum -> Sui swap verification (1inch Fusion+)...
+🔍 Starting Enhanced Ethereum -> Sui swap verification (1inch Fusion+)...
 ==================================================
 
-🛡️ Step 1: セキュリティチェック
-🛡️ 総合セキュリティチェック開始:
-  📦 TX Hash: eth-to-sui-1753778285251
+🛡️ Step 1: Security Check
+🛡️ Comprehensive Security Check Started:
+  📦 TX Hash: eth-to-sui-1753781208120
   👤 User: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   🎯 Action: resolver
-✅ Reentrancy Protection: eth-to-sui-1753778285251 - 安全
-🔐 アクセス制御チェック:
-  👤 ユーザー: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
-  🎯 アクション: resolver
-  🔧 リゾルバー権限: 許可
-✅ 総合セキュリティチェック通過
+✅ Reentrancy Protection: eth-to-sui-1753781208120 - Safe
+🔐 Access Control Check:
+  👤 User: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
+  🎯 Action: resolver
+  🔧 Resolver Permission: Granted
+✅ Comprehensive Security Check Passed
 
-📦 Step 2: Fusion Order作成
-📦 Fusion Order作成:
-  🆔 Order ID: fusion-1753778285252-76d9a
+📦 Step 2: Create Fusion Order
+📦 Creating Fusion Order:
+  🆔 Order ID: fusion-1753781208122-t93pvn
   👤 Maker: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   🔄 Route: ETH → SUI
   💰 Source Amount: 100000000000000
   💸 Destination Amount: 0
 
-📤 Step 3: リレイヤーサービス経由でオーダー共有
-📤 リレイヤーサービス: オーダーfusion-1753778285252-76d9aをブロードキャスト中...
-  🌐 ソースチェーン: ETH
-  🎯 デスティネーションチェーン: SUI
-  💰 ソース金額: 100000000000000
-  💸 デスティネーション金額: 0
-  👥 リゾルバー数: 5
-📞 リゾルバー0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664にオーダーfusion-1753778285252-76d9aを通知
-📞 リゾルバー0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753にオーダーfusion-1753778285252-76d9aを通知
-📞 リゾルバー0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44Dにオーダーfusion-1753778285252-76d9aを通知
-📞 リゾルバー0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcfにオーダーfusion-1753778285252-76d9aを通知
-📞 リゾルバー0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875にオーダーfusion-1753778285252-76d9aを通知
-🏁 オーダーfusion-1753778285252-76d9aのDutch auction開始
-👁️ オーダーfusion-1753778285252-76d9aのオークション監視開始
+📤 Step 3: Share Order via Relayer Service
+📤 Relayer Service: Broadcasting order fusion-1753781208122-t93pvn...
+  🌐 Source Chain: ETH
+  🎯 Destination Chain: SUI
+  💰 Source Amount: 100000000000000
+  �� Destination Amount: 0
+  👥 Number of Resolvers: 5
+📞 Notifying resolver 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664 about order fusion-1753781208122-t93pvn
+📞 Notifying resolver 0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753 about order fusion-1753781208122-t93pvn
+📞 Notifying resolver 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D about order fusion-1753781208122-t93pvn
+📞 Notifying resolver 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf about order fusion-1753781208122-t93pvn
+📞 Notifying resolver 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875 about order fusion-1753781208122-t93pvn
+🏁 Starting Dutch auction for order fusion-1753781208122-t93pvn
+👁️ Starting auction monitoring for order fusion-1753781208122-t93pvn
 
-🏁 Step 4: Dutch Auction処理
-🏁 Dutch Auction 価格計算:
-  ⏰ 現在時刻: 2025-07-29T08:38:05.757Z
-  📅 オークション開始時刻: 2025-07-29T08:43:05.000Z
-  💰 市場レート: 0.001
-  🚀 オークション前: 0.006 (6x)
+🏁 Step 4: Dutch Auction Processing
+🏁 Dutch Auction Price Calculation:
+  ⏰ Current Time: 2025-07-29T09:26:48.629Z
+  📅 Auction Start Time: 2025-07-29T09:31:48.000Z
+  💰 Market Rate: 0.001
+  🚀 Before Auction: 0.006 (6x)
 
-⛽ Step 5: Gas価格調整
-📊 シミュレートされたBase Fee: 62 Gwei
-⛽ Gas Price Adjustment: 履歴不足 - 元価格維持: 0.006
+⛽ Step 5: Gas Price Adjustment
+📊 Simulated Base Fee: 36 Gwei
+⛽ Gas Price Adjustment: Insufficient History - Maintaining Original Price: 0.006
 
-🔑 Step 6: シークレットとハッシュロック生成
-📝 シークレット生成: 0x414b31d1a1dd24d2a9273b5924076e9bbe686805dbf6712abf4e6f340b421390
-🔒 ハッシュロック生成: 0x16ebff659b00271d985dfdf990c25f86a28c25803f357c0e4dac981798ab41b1
-⏰ Ethereum タイムロック設定: 1753781885
-⏰ Sui タイムロック設定: 1753781885759
+🔑 Step 6: Generate Secret and Hash Lock
+📝 Secret generated: 0xb6edfeb607fd5b01d0c35dbc05ec198f64d03e49d8f48aae1376f4d49c96c905
+🔒 Hash lock generated: 0xb0bbff6152a0f9a7e31bba6042a8d62154cc3099f4013e9727792e63da0cf40f
+⏰ Ethereum timelock set: 1753784808
+⏰ Sui timelock set: 1753784808631
 
-⏳ Step 7: Finality待機
-⏳ チェーン1のfinality待機中...
-📊 必要ブロック数: 64
-🎯 基準ブロック: 8866916
-📈 Finality進捗: 8866928/8866980 (18.8%)
-🏁 Dutch Auction 価格計算:
-  ⏰ 現在時刻: 2025-07-29T08:38:07.757Z
-  📅 オークション開始時刻: 2025-07-29T08:43:05.000Z
-  💰 市場レート: 1
-  🚀 オークション前: 6 (6x)
-📊 オークション監視 (1/5):
-  💰 現在レート: 6
-💰 リゾルバー収益性チェック: 6 >= 0.9 = true
-💰 リゾルバー0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664がオーダーfusion-1753778285252-76d9aを実行可能
-⚡ オーダー実行:
-  📦 オーダーID: fusion-1753778285252-76d9a
-  👤 実行リゾルバー: 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664
-  💰 実行金額: 100000000000000
-📈 Finality進捗: 8866940/8866980 (37.5%)
-✅ オーダーfusion-1753778285252-76d9a実行完了
-📈 Finality進捗: 8866952/8866980 (56.3%)
-📈 Finality進捗: 8866964/8866980 (75.0%)
-📈 Finality進捗: 8866976/8866980 (93.8%)
-✅ チェーン1のfinality確認完了
+⏳ Step 7: Wait for Finality
+⏳ Waiting for chain 1 finality...
+📊 Required Blocks: 64
+🎯 Base Block: 8867160
+📈 Finality Progress: 8867172/8867224 (18.8%)
+🏁 Dutch Auction Price Calculation:
+  ⏰ Current Time: 2025-07-29T09:26:50.629Z
+  📅 Auction Start Time: 2025-07-29T09:31:48.000Z
+  💰 Market Rate: 1
+  🚀 Before Auction: 6 (6x)
+📊 Auction Monitoring (1/5):
+  💰 Current Rate: 6
+💰 Resolver Profitability Check: 6 >= 0.9 = true
+💰 Resolver 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664 can execute order fusion-1753781208122-t93pvn
+⚡ Executing Order:
+  📦 Order ID: fusion-1753781208122-t93pvn
+  👤 Executing Resolver: 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664
+  💰 Execution Amount: 100000000000000
+📈 Finality Progress: 8867184/8867224 (37.5%)
+✅ Order fusion-1753781208122-t93pvn execution completed
+📈 Finality Progress: 8867196/8867224 (56.3%)
+📈 Finality Progress: 8867208/8867224 (75.0%)
+📈 Finality Progress: 8867220/8867224 (93.8%)
+✅ Chain 1 finality confirmation completed
 
-📦 Step 8: Safety Deposit付きEthereumエスクロー作成
-🛡️ Safety Deposit計算:
-  💰 エスクロー金額: 0.0001 ETH
-  📊 レート: 10%
-  💸 計算額: 0.00001 ETH
-  🔒 最終Safety Deposit: 0.001 ETH
-💰 Safety Deposit付きエスクロー作成:
-  💸 基本金額: 0.0001 ETH
+📦 Step 8: Create Ethereum Escrow with Safety Deposit
+🛡️ Safety Deposit Calculation:
+  💰 Escrow Amount: 0.0001 ETH
+  📊 Rate: 10%
+  💸 Calculated Amount: 0.00001 ETH
+  🔒 Final Safety Deposit: 0.001 ETH
+💰 Creating Escrow with Safety Deposit:
+  💸 Base Amount: 0.0001 ETH
   🛡️ Safety Deposit: 0.001 ETH
-  📊 総額: 0.0011 ETH
-  👤 リゾルバー: 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664
-🔧 Ethereum エスクロー作成準備...
-📝 ハッシュロック: 0x16ebff659b00271d985dfdf990c25f86a28c25803f357c0e4dac981798ab41b1
-⏰ タイムロック: 1753781885
-💰 金額: 0.0011 ETH
-👤 テイカー: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
-💰 ユーザー残高: 1.248363132788845681 ETH
-🔍 デバッグ情報:
-  - ハッシュロック型: string, 長さ: 66
-  - タイムロック型: bigint, 値: 1753781885
-  - 金額型: bigint, 値: 1100000000000000
-  - 現在時刻: 1753778291
-  - タイムロック > 現在時刻: true
-  - アドレス有効性: true
-  - コントラクトアドレス: 0x5c38E80AbD0dCc58aa9078B9206e7dFBc7C4918E
-  - ネットワーク: 11155111
-  - ガス価格: 0.005599493 Gwei
-📤 トランザクション送信中...
-📋 トランザクションハッシュ: 0x2f2b625d832808b0137e63b493ca2c5528c46e8c8f9b5a4fc78f29b673df1df8
-📋 トランザクション完了: success
-📦 エスクローID取得: 0x298eff475d5f0ef5b56118e545a98a8db295caa75d61cf5ce5939eb4886cc803
-🔍 エスクロー情報確認:
+  📊 Total Amount: 0.0011 ETH
+  👤 Resolver: 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664
+🔧 Preparing Ethereum escrow creation...
+📝 Hash lock: 0xb0bbff6152a0f9a7e31bba6042a8d62154cc3099f4013e9727792e63da0cf40f
+⏰ Time lock: 1753784808
+💰 Amount: 0.0011 ETH
+👤 Taker: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
+💰 User balance: 1.246360157815692425 ETH
+🔍 Debug information:
+  - Hash lock type: string, length: 66
+  - Time lock type: bigint, value: 1753784808
+  - Amount type: bigint, value: 1100000000000000
+  - Current time: 1753781213
+  - Time lock > current time: true
+  - Address validity: true
+  - Contract address: 0x5c38E80AbD0dCc58aa9078B9206e7dFBc7C4918E
+  - Network: 11155111
+  - Gas price: 0.006099318 Gwei
+📤 Sending transaction...
+📋 Transaction hash: 0xf21ce77bd1cdb1f75e54b98eb33c89ff66ab9a31592181e0ab6df1c2170e7b94
+📋 Transaction completed: success
+📦 Escrow ID retrieved: 0x796abb38af57e5c808866dafc866cb46079d47113ca8d075210e3be2a484987a
+🔍 Escrow information verification:
   👤 Maker: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   👤 Taker: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   💰 Total Amount: 0.0011 ETH
   💰 Remaining Amount: 0.0011 ETH
   ✅ Completed: false
   ❌ Refunded: false
-✅ エスクロー作成確認済み
-📦 Ethereum エスクロー作成: 0x298eff475d5f0ef5b56118e545a98a8db295caa75d61cf5ce5939eb4886cc803
+✅ Escrow creation confirmed
+📦 Ethereum escrow created: 0x796abb38af57e5c808866dafc866cb46079d47113ca8d075210e3be2a484987a
 
-🔄 Step 9: Ethereumエスクロー フィル
-🔐 条件付きシークレット共有開始: 0x298eff475d5f0ef5b56118e545a98a8db295caa75d61cf5ce5939eb4886cc803
-⏳ シークレット共有遅延待機中... (300秒)
-🔑 シークレットをリゾルバー0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664と共有完了
-  📝 オーダーID: 0x298eff475d5f0ef5b56118e545a98a8db295caa75d61cf5ce5939eb4886cc803
-  🔐 シークレット: 0x414b31d1...
-🔧 Ethereum エスクロー フィル準備...
-📦 エスクローID: 0x298eff475d5f0ef5b56118e545a98a8db295caa75d61cf5ce5939eb4886cc803
-💰 総金額: 0.0001 ETH
-🔑 シークレット: 0x414b31d1a1dd24d2a9273b5924076e9bbe686805dbf6712abf4e6f340b421390
-🔍 エスクロー事前確認:
-  💰 残額: 0.0011 ETH
-  ✅ 完了済み: false
-  ❌ 返金済み: false
-  🔒 ハッシュロック: 0x16ebff659b00271d985dfdf990c25f86a28c25803f357c0e4dac981798ab41b1
-🔍 シークレット検証:
-  🔑 シークレット: 0x414b31d1a1dd24d2a9273b5924076e9bbe686805dbf6712abf4e6f340b421390
-  🔒 計算されたハッシュ: 0x16ebff659b00271d985dfdf990c25f86a28c25803f357c0e4dac981798ab41b1
-  🔒 保存されたハッシュ: 0x16ebff659b00271d985dfdf990c25f86a28c25803f357c0e4dac981798ab41b1
-  ✅ 検証結果: true
-🔄 Resolver2がpartial fill開始: 0.00005 ETH
-📤 Resolver2トランザクション送信中...
-📋 Resolver2トランザクションハッシュ: 0x236cbd5560a5876cd66dab4104f7d4e8b0a1107228a1c764e56451eca8611fe5
-✅ Resolver2トランザクション完了: reverted
-🔄 Resolver2が受取アドレスに送金開始: 0.00005 ETH
-📋 Resolver2送金ハッシュ: 0xd2f3e0f9852e5086b8344bd60056d6cfe2f5af1a1a604177a50bb6d78bf94a75
-✅ Resolver2送金完了: success
-🔗 Resolver2送金トランザクション: https://sepolia.etherscan.io/tx/0xd2f3e0f9852e5086b8344bd60056d6cfe2f5af1a1a604177a50bb6d78bf94a75
-🔗 ユーザーアドレス入金履歴: https://sepolia.etherscan.io/tx/0xd2f3e0f9852e5086b8344bd60056d6cfe2f5af1a1a604177a50bb6d78bf94a75#eventlog
-🔍 Resolver2フィル後確認:
-  💰 残額: 0.0011 ETH
-  ✅ 完了済み: false
-🔄 Resolver3がpartial fill開始: 0.00005 ETH
-📤 Resolver3トランザクション送信中...
-📋 Resolver3トランザクションハッシュ: 0x46da7f3ad06ed55f984ff6e08b541c5186f756b43e303d23b6680e2aa06aa8e7
-🧹 Reentrancy Guard クリーンアップ: eth-to-sui-1753778285251
-✅ Resolver3トランザクション完了: reverted
-🔄 Resolver3が受取アドレスに送金開始: 0.00005 ETH
-📋 Resolver3送金ハッシュ: 0x99103c416b4a644d55535b833ad045e84476561c177f4c6d77ec07dd35072fde
-✅ Resolver3送金完了: success
-🔗 Resolver3送金トランザクション: https://sepolia.etherscan.io/tx/0x99103c416b4a644d55535b833ad045e84476561c177f4c6d77ec07dd35072fde
-🔗 ユーザーアドレス入金履歴: https://sepolia.etherscan.io/tx/0x99103c416b4a644d55535b833ad045e84476561c177f4c6d77ec07dd35072fde#eventlog
-🔍 最終確認:
-  💰 残額: 0.0011 ETH
-  ✅ 完了済み: false
-✅ Ethereum エスクロー フィル完了（2人のResolverによるpartial fill）
-📋 フィル詳細:
+🔄 Step 9: Fill Ethereum Escrow
+🔐 Conditional Secret Sharing Started: 0x796abb38af57e5c808866dafc866cb46079d47113ca8d075210e3be2a484987a
+⏳ Waiting for secret sharing delay... (300 seconds)
+🔑 Secret shared with resolver 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664 completed
+  📝 Order ID: 0x796abb38af57e5c808866dafc866cb46079d47113ca8d075210e3be2a484987a
+  🔐 Secret: 0xb6edfeb6...
+🔧 Preparing Ethereum escrow fill...
+📦 Escrow ID: 0x796abb38af57e5c808866dafc866cb46079d47113ca8d075210e3be2a484987a
+💰 Total amount: 0.0001 ETH
+🔑 Secret: 0xb6edfeb607fd5b01d0c35dbc05ec198f64d03e49d8f48aae1376f4d49c96c905
+🔍 Pre-escrow verification:
+  💰 Remaining amount: 0.0011 ETH
+  ✅ Completed: false
+  ❌ Refunded: false
+  🔒 Hash lock: 0xb0bbff6152a0f9a7e31bba6042a8d62154cc3099f4013e9727792e63da0cf40f
+🔍 Secret verification:
+  🔑 Secret: 0xb6edfeb607fd5b01d0c35dbc05ec198f64d03e49d8f48aae1376f4d49c96c905
+  🔒 Calculated hash: 0xb0bbff6152a0f9a7e31bba6042a8d62154cc3099f4013e9727792e63da0cf40f
+  🔒 Stored hash: 0xb0bbff6152a0f9a7e31bba6042a8d62154cc3099f4013e9727792e63da0cf40f
+  ✅ Verification result: true
+🔄 Resolver2 starting partial fill: 0.00005 ETH
+📤 Sending Resolver2 transaction...
+📋 Resolver2 transaction hash: 0xf29d489324bdb01a5ae5f03e094fc5c99e122964ea5df1e82e28140e02a192b2
+✅ Resolver2 transaction completed: reverted
+🔄 Resolver2 starting transfer to recipient address: 0.00005 ETH
+📋 Resolver2 transfer hash: 0x699563ae78ef4c650822deaae73e418b2b51ff2faf740556d0aca6156fdef05a
+✅ Resolver2 transfer completed: success
+🔗 Resolver2 transfer transaction: https://sepolia.etherscan.io/tx/0x699563ae78ef4c650822deaae73e418b2b51ff2faf740556d0aca6156fdef05a
+🔗 User address deposit history: https://sepolia.etherscan.io/tx/0x699563ae78ef4c650822deaae73e418b2b51ff2faf740556d0aca6156fdef05a#eventlog
+🔍 Post-Resolver2 fill verification:
+  💰 Remaining amount: 0.0011 ETH
+  ✅ Completed: false
+🔄 Resolver3 starting partial fill: 0.00005 ETH
+📤 Sending Resolver3 transaction...
+📋 Resolver3 transaction hash: 0x6cf639f380c882f3c906494b4414b38da6aeede64bd65b98237274d07a674c58
+🧹 Reentrancy Guard Cleanup: eth-to-sui-1753781208120
+✅ Resolver3 transaction completed: reverted
+🔄 Resolver3 starting transfer to recipient address: 0.00005 ETH
+📋 Resolver3 transfer hash: 0x42cc38a0181870dccafa3e0502a83dd36b1168ef21ca1a56b6ed209c99c88964
+✅ Resolver3 transfer completed: success
+🔗 Resolver3 transfer transaction: https://sepolia.etherscan.io/tx/0x42cc38a0181870dccafa3e0502a83dd36b1168ef21ca1a56b6ed209c99c88964
+🔗 User address deposit history: https://sepolia.etherscan.io/tx/0x42cc38a0181870dccafa3e0502a83dd36b1168ef21ca1a56b6ed209c99c88964#eventlog
+🔍 Final verification:
+  💰 Remaining amount: 0.0011 ETH
+  ✅ Completed: false
+✅ Ethereum escrow fill completed (partial fill by 2 resolvers)
+📋 Fill details:
   👤 Resolver2: 0.00005 ETH → 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   👤 Resolver3: 0.00005 ETH → 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
-  💰 合計: 0.0001 ETH
-🔗 送金トランザクション履歴:
-  📤 Resolver2: https://sepolia.etherscan.io/tx/0xd2f3e0f9852e5086b8344bd60056d6cfe2f5af1a1a604177a50bb6d78bf94a75
-  📤 Resolver3: https://sepolia.etherscan.io/tx/0x99103c416b4a644d55535b833ad045e84476561c177f4c6d77ec07dd35072fde
-🔗 ユーザーアドレス入金履歴:
-  📥 入金1: https://sepolia.etherscan.io/tx/0xd2f3e0f9852e5086b8344bd60056d6cfe2f5af1a1a604177a50bb6d78bf94a75#eventlog
-  📥 入金2: https://sepolia.etherscan.io/tx/0x99103c416b4a644d55535b833ad045e84476561c177f4c6d77ec07dd35072fde#eventlog
-✅ Ethereum エスクロー フィル完了
+  💰 Total: 0.0001 ETH
+🔗 Transfer transaction history:
+  📤 Resolver2: https://sepolia.etherscan.io/tx/0x699563ae78ef4c650822deaae73e418b2b51ff2faf740556d0aca6156fdef05a
+  📤 Resolver3: https://sepolia.etherscan.io/tx/0x42cc38a0181870dccafa3e0502a83dd36b1168ef21ca1a56b6ed209c99c88964
+🔗 User address deposit history:
+  📥 Deposit 1: https://sepolia.etherscan.io/tx/0x699563ae78ef4c650822deaae73e418b2b51ff2faf740556d0aca6156fdef05a#eventlog
+  📥 Deposit 2: https://sepolia.etherscan.io/tx/0x42cc38a0181870dccafa3e0502a83dd36b1168ef21ca1a56b6ed209c99c88964#eventlog
+✅ Ethereum escrow fill completed
 
-🔄 Step 10: Suiエスクロー作成・フィル
-🛡️ Safety Deposit計算:
-  💰 エスクロー金額: 1000000000 SUI
-  📊 レート: 10%
-  💸 計算額: 100000000 SUI
-  🔒 最終Safety Deposit: 1000000000 SUI
-💰 Safety Deposit付きエスクロー作成:
-  💸 基本金額: 1000000000 SUI
+🔄 Step 10: Create and Fill Sui Escrow
+🛡️ Safety Deposit Calculation:
+  💰 Escrow Amount: 1000000000 SUI
+  📊 Rate: 10%
+  💸 Calculated Amount: 100000000 SUI
+  🔒 Final Safety Deposit: 1000000000 SUI
+💰 Creating Escrow with Safety Deposit:
+  💸 Base Amount: 1000000000 SUI
   🛡️ Safety Deposit: 1000000000 SUI
-  📊 総額: 2000000000 SUI
-  👤 リゾルバー: 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf
-🔍 Suiアカウント確認: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-🔍 Suiアカウント残高確認: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-💰 現在の総残高: 10000000000
-✅ 残高は十分です
-🔧 Sui トランザクション準備中...
-🔧 Sui トランザクション準備完了
-💰 金額: 2000000000
-⏰ タイムロック: 1753781885759
-🔒 ハッシュロック: 0x16ebff659b00271d985dfdf990c25f86a28c25803f357c0e4dac981798ab41b1
-⛽ ガスコイン: 0x55ebefde8ff14cf3e50f14e2c806b369a2c07e8e910ad63a9f78c622723e9eb6
-📋 トランザクション結果: {
-  digest: 'AT7fZkPBYpu63MkXQTDgD5jbM8PjHgusbj6QLsVR1X9D',
+  📊 Total Amount: 2000000000 SUI
+  👤 Resolver: 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf
+🔍 Checking Sui account: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+🔍 Checking Sui account balance: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+💰 Current total balance: 10000000000
+✅ Balance is sufficient
+🔧 Preparing Sui transaction...
+🔧 Sui transaction preparation completed
+💰 Amount: 2000000000
+⏰ Time lock: 1753784808631
+🔒 Hash lock: 0xb0bbff6152a0f9a7e31bba6042a8d62154cc3099f4013e9727792e63da0cf40f
+⛽ Gas coin: 0x73256216160ef55cdba23e2d5c3c61263e2d64cf5f88164d3a999edcdf711b39
+📋 Transaction result: {
+  digest: 'GrufmcmERbMkdZNTBwD6pmQ6TwW33JUNAgWgSzXWSgPP',
   effects: {
     messageVersion: 'v1',
     status: { status: 'success' },
-    executedEpoch: '10',
+    executedEpoch: '11',
     gasUsed: {
       computationCost: '1000000',
       storageCost: '3929200',
@@ -254,267 +257,254 @@ Address Match: true
     },
     modifiedAtVersions: [ [Object] ],
     sharedObjects: [ [Object] ],
-    transactionDigest: 'AT7fZkPBYpu63MkXQTDgD5jbM8PjHgusbj6QLsVR1X9D',
+    transactionDigest: 'GrufmcmERbMkdZNTBwD6pmQ6TwW33JUNAgWgSzXWSgPP',
     created: [ [Object] ],
     mutated: [ [Object] ],
     gasObject: { owner: [Object], reference: [Object] },
-    eventsDigest: '69z2AXyG1rzCBywEbR3x5kT7AJutu6MX6SekSrZ4KM9f',
+    eventsDigest: '31GavKVEzt7eYrebAQvDGfb7PmvycuYhGiMyDXsS752c',
     dependencies: [
       '5K9i3G66QVdAM6GkHX9WBqYxoHkCmDUJ1biWM7aneJ4Z',
       '6SvDBNgUpMmhYgKngH6KzMtGhwD5pSwmXFxYotAyZxLh',
-      '7jYZUpwgtv53yMnB8WjL3V37hxJnS7zQd6dTwPLaDP98',
-      'AF82xpNDT3HvhVrVrpuqEUCrR5fXJrhuayKBdX7KSQMC'
+      'BRQjGBCMDiGWZBbM1NMGsAHBxaskud9MP76xrwCMzyaS',
+      'CZFofRoWEYghNiMdVX1y9E5chRQUgqFTjL2RFLMjQGf8'
     ]
   },
   objectChanges: [
     {
       type: 'mutated',
-      sender: '0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea',
+      sender: '0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4',
       owner: [Object],
       objectType: '0x2::coin::Coin<0x2::sui::SUI>',
-      objectId: '0x55ebefde8ff14cf3e50f14e2c806b369a2c07e8e910ad63a9f78c622723e9eb6',
-      version: '752302',
-      previousVersion: '205',
-      digest: 'RXdNFUPbec4iCxt5h7jCcnWLHucBK8HmkyWkMmK1qUQ'
+      objectId: '0x73256216160ef55cdba23e2d5c3c61263e2d64cf5f88164d3a999edcdf711b39',
+      version: '808368',
+      previousVersion: '207',
+      digest: 'BYdeASmf6zecJsrz3gqRg9yHWrYpePt92BSPJnGZEWAu'
     },
     {
       type: 'created',
-      sender: '0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea',
+      sender: '0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4',
       owner: [Object],
       objectType: '0x68fe9550d8f0144a92a4c0af47af3dd829885bbf2e1134ce05059f8d2e3a5234::cross_chain_escrow::CrossChainEscrow<0x2::sui::SUI>',
-      objectId: '0x22444c40cb2d975a3a80d9fadc7bb5d4625823d75ad21e2b421888be3a79285a',
-      version: '752302',
-      digest: 'BQUgk7B9PYtHgr4nbMe4TE3SGKyMZKjFsaK75xtcwuB'
+      objectId: '0x054e92e0a308efabd0c2128f8d4166c2ec56b157a56960953e37ea6f2d70b7d7',
+      version: '808368',
+      digest: 'HcVmVd4Eb6i8hBCZiFv7wSJxp7CYETU3gwrHBvHncXZT'
     }
   ],
   confirmedLocalExecution: false
 }
-📦 Sui エスクロー作成: 0x22444c40cb2d975a3a80d9fadc7bb5d4625823d75ad21e2b421888be3a79285a
-🔐 条件付きシークレット共有開始: 0x22444c40cb2d975a3a80d9fadc7bb5d4625823d75ad21e2b421888be3a79285a
-⏳ シークレット共有遅延待機中... (300秒)
-🔑 シークレットをリゾルバー0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcfと共有完了
-  📝 オーダーID: 0x22444c40cb2d975a3a80d9fadc7bb5d4625823d75ad21e2b421888be3a79285a
-  🔐 シークレット: 0x414b31d1...
-🔍 Suiアカウント残高確認: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-💰 現在の総残高: 7996048920
-✅ 残高は十分です
-🔧 Sui エスクロー フィル準備...
-📦 エスクローID: 0x22444c40cb2d975a3a80d9fadc7bb5d4625823d75ad21e2b421888be3a79285a
-💰 総金額: 1000000000 SUI
-🔑 シークレット: 0x414b31d1a1dd24d2a9273b5924076e9bbe686805dbf6712abf4e6f340b421390
-📋 スワップ方向: Sepolia -> Sui
-📤 送金先: ユーザーのSuiアドレス 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-🔄 Sui Resolver2がpartial fill開始: 500000000 SUI
-✅ Sui Resolver2 フィル完了: {
-  digest: 'G9YESCzRj3Np13rxHKPcy61t9c8vziBp3dXwKUy4XjYX',
+📦 Sui escrow created: 0x054e92e0a308efabd0c2128f8d4166c2ec56b157a56960953e37ea6f2d70b7d7
+🔐 Conditional Secret Sharing Started: 0x054e92e0a308efabd0c2128f8d4166c2ec56b157a56960953e37ea6f2d70b7d7
+⏳ Waiting for secret sharing delay... (300 seconds)
+🔑 Secret shared with resolver 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf completed
+  📝 Order ID: 0x054e92e0a308efabd0c2128f8d4166c2ec56b157a56960953e37ea6f2d70b7d7
+  🔐 Secret: 0xb6edfeb6...
+🔍 Checking Sui account balance: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+💰 Current total balance: 7996048920
+✅ Balance is sufficient
+🔧 Preparing Sui escrow fill...
+📦 Escrow ID: 0x054e92e0a308efabd0c2128f8d4166c2ec56b157a56960953e37ea6f2d70b7d7
+💰 Total amount: 1000000000 SUI
+🔑 Secret: 0xb6edfeb607fd5b01d0c35dbc05ec198f64d03e49d8f48aae1376f4d49c96c905
+ Swap direction: Sepolia -> Sui
+📤 Recipient: User's Sui address 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+🔄 Sui Resolver2 starting partial fill: 500000000 SUI
+✅ Sui Resolver2 fill completed: {
+  digest: 'F8SJZkuiFq9EFMZFx8Uw6PphH76PcwKjCYE1oPSESDHQ',
   effects: {
     messageVersion: 'v1',
     status: { status: 'success' },
-    executedEpoch: '10',
+    executedEpoch: '11',
     gasUsed: {
       computationCost: '1000000',
-      storageCost: '8398000',
-      storageRebate: '6846840',
-      nonRefundableStorageFee: '69160'
+      storageCost: '8899600',
+      storageRebate: '7343424',
+      nonRefundableStorageFee: '74176'
     },
     modifiedAtVersions: [ [Object], [Object], [Object] ],
     sharedObjects: [ [Object], [Object], [Object] ],
-    transactionDigest: 'G9YESCzRj3Np13rxHKPcy61t9c8vziBp3dXwKUy4XjYX',
+    transactionDigest: 'F8SJZkuiFq9EFMZFx8Uw6PphH76PcwKjCYE1oPSESDHQ',
     created: [ [Object] ],
     mutated: [ [Object], [Object], [Object] ],
     gasObject: { owner: [Object], reference: [Object] },
-    eventsDigest: '8nnL5iSLa1xDwzGpPgUyW1So5LoGeHzxwME2T8uEeYap',
+    eventsDigest: 'EPZjAjyLRT6KYtmpo2ziXuWY4PEuxSP7FrzfpErF5ytB',
     dependencies: [
       '5K9i3G66QVdAM6GkHX9WBqYxoHkCmDUJ1biWM7aneJ4Z',
       '6SvDBNgUpMmhYgKngH6KzMtGhwD5pSwmXFxYotAyZxLh',
-      '6qaaRWtCRZy7z9MbjT61xQPGSku4LWUTvoPVPe9WgFPe',
-      '8y4HDjt7gzQZpHSJdTSoqbbEgy6oaLCqwCcS26ZEJJ3y',
-      'AT7fZkPBYpu63MkXQTDgD5jbM8PjHgusbj6QLsVR1X9D'
+      'DjvV4Gj1sH7dAGGjcFVVyEQu1sLmXmmYeQqV6zUxBLaV',
+      'GDsupTANCMnJ9ufhkEV7fxGaQG91kVwLbtJ34AeSXQdS',
+      'GrufmcmERbMkdZNTBwD6pmQ6TwW33JUNAgWgSzXWSgPP'
     ]
   },
   confirmedLocalExecution: false
 }
-📋 Resolver2送金詳細:
-  💰 金額: 500000000 SUI
-  📤 送金先: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-🔗 Resolver2送金トランザクション: https://suiexplorer.com/txblock/G9YESCzRj3Np13rxHKPcy61t9c8vziBp3dXwKUy4XjYX?network=devnet
-🔗 受取アドレス入金履歴: https://suiexplorer.com/txblock/G9YESCzRj3Np13rxHKPcy61t9c8vziBp3dXwKUy4XjYX?network=devnet
-🔄 Sui Resolver3がpartial fill開始: 500000000 SUI
-✅ Sui Resolver3 フィル完了: {
-  digest: 'Co7zJD1tN8nYBXke3xU7v7BhMoidLCFtDyfa2CxPbKrS',
+📋 Resolver2 transfer details:
+  💰 Amount: 500000000 SUI
+  📤 Recipient: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+🔗 Resolver2 transfer transaction: https://suiexplorer.com/txblock/F8SJZkuiFq9EFMZFx8Uw6PphH76PcwKjCYE1oPSESDHQ?network=devnet
+🔗 Recipient deposit history: https://suiexplorer.com/txblock/F8SJZkuiFq9EFMZFx8Uw6PphH76PcwKjCYE1oPSESDHQ?network=devnet
+🔄 Sui Resolver3 starting partial fill: 500000000 SUI
+✅ Sui Resolver3 fill completed: {
+  digest: 'C1xxEFWpW5xZK2Mym8ehqjUJrgXQiymd4h5j8DKPqQwU',
   effects: {
     messageVersion: 'v1',
     status: { status: 'success' },
-    executedEpoch: '10',
+    executedEpoch: '11',
     gasUsed: {
       computationCost: '1000000',
-      storageCost: '8398000',
-      storageRebate: '8314020',
-      nonRefundableStorageFee: '83980'
+      storageCost: '8899600',
+      storageRebate: '8810604',
+      nonRefundableStorageFee: '88996'
     },
     modifiedAtVersions: [ [Object], [Object], [Object], [Object] ],
     sharedObjects: [ [Object], [Object], [Object] ],
-    transactionDigest: 'Co7zJD1tN8nYBXke3xU7v7BhMoidLCFtDyfa2CxPbKrS',
+    transactionDigest: 'C1xxEFWpW5xZK2Mym8ehqjUJrgXQiymd4h5j8DKPqQwU',
     created: [ [Object] ],
     mutated: [ [Object], [Object], [Object] ],
     deleted: [ [Object] ],
     gasObject: { owner: [Object], reference: [Object] },
-    eventsDigest: 'C2cryRUpy3tqS9S2hqzXEKMAShygkcFZRpqLAr25EfLg',
+    eventsDigest: '7t6vzZAJfZYmxg7eLYbBgJiY8kcLmPghGx1tFPUD4hcH',
     dependencies: [
       '5K9i3G66QVdAM6GkHX9WBqYxoHkCmDUJ1biWM7aneJ4Z',
       '6SvDBNgUpMmhYgKngH6KzMtGhwD5pSwmXFxYotAyZxLh',
-      '9hsEeqsP78mcgFYWtxjgEyEAm8SKGssfUoT39spcS3Qm',
-      'G9YESCzRj3Np13rxHKPcy61t9c8vziBp3dXwKUy4XjYX'
+      '78k1v94jn3SuibkPQ73xooxxtohxd5Fz4FgmiPFQbwzf',
+      'F8SJZkuiFq9EFMZFx8Uw6PphH76PcwKjCYE1oPSESDHQ'
     ]
   },
   confirmedLocalExecution: false
 }
-📋 Resolver3送金詳細:
-  💰 金額: 500000000 SUI
-  📤 送金先: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-🔗 Resolver3送金トランザクション: https://suiexplorer.com/txblock/Co7zJD1tN8nYBXke3xU7v7BhMoidLCFtDyfa2CxPbKrS?network=devnet
-🔗 受取アドレス入金履歴: https://suiexplorer.com/txblock/Co7zJD1tN8nYBXke3xU7v7BhMoidLCFtDyfa2CxPbKrS?network=devnet
-✅ Sui エスクロー フィル完了（2人のResolverによるpartial fill）
-📋 フィル詳細:
-  👤 Resolver2: 500000000 SUI → 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-  👤 Resolver3: 500000000 SUI → 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-  💰 合計: 1000000000 SUI
-📋 スワップ方向: Sepolia -> Sui
-🔗 送金トランザクション履歴:
-  📤 Resolver2: https://suiexplorer.com/txblock/G9YESCzRj3Np13rxHKPcy61t9c8vziBp3dXwKUy4XjYX?network=devnet
-  📤 Resolver3: https://suiexplorer.com/txblock/Co7zJD1tN8nYBXke3xU7v7BhMoidLCFtDyfa2CxPbKrS?network=devnet
-🔗 受取アドレス入金履歴:
-  📥 入金1: https://suiexplorer.com/txblock/G9YESCzRj3Np13rxHKPcy61t9c8vziBp3dXwKUy4XjYX?network=devnet
-  📥 入金2: https://suiexplorer.com/txblock/Co7zJD1tN8nYBXke3xU7v7BhMoidLCFtDyfa2CxPbKrS?network=devnet
-💡 注意: 実際のクロスチェーンブリッジでは、スワップ方向に応じて適切なアドレスに送金されます
-✅ Sui エスクロー フィル完了
+📋 Resolver3 transfer details:
+  💰 Amount: 500000000 SUI
+  📤 Recipient: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+🔗 Resolver3 transfer transaction: https://suiexplorer.com/txblock/C1xxEFWpW5xZK2Mym8ehqjUJrgXQiymd4h5j8DKPqQwU?network=devnet
+🔗 Recipient deposit history: https://suiexplorer.com/txblock/C1xxEFWpW5xZK2Mym8ehqjUJrgXQiymd4h5j8DKPqQwU?network=devnet
+✅ Sui escrow fill completed (partial fill by 2 resolvers)
+📋 Fill details:
+  👤 Resolver2: 500000000 SUI → 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+  👤 Resolver3: 500000000 SUI → 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+  💰 Total: 1000000000 SUI
+📋 Swap direction: Sepolia -> Sui
+🔗 Transfer transaction history:
+  📤 Resolver2: https://suiexplorer.com/txblock/F8SJZkuiFq9EFMZFx8Uw6PphH76PcwKjCYE1oPSESDHQ?network=devnet
+  📤 Resolver3: https://suiexplorer.com/txblock/C1xxEFWpW5xZK2Mym8ehqjUJrgXQiymd4h5j8DKPqQwU?network=devnet
+🔗 Recipient deposit history:
+  📥 Deposit1: https://suiexplorer.com/txblock/F8SJZkuiFq9EFMZFx8Uw6PphH76PcwKjCYE1oPSESDHQ?network=devnet
+  📥 Deposit2: https://suiexplorer.com/txblock/C1xxEFWpW5xZK2Mym8ehqjUJrgXQiymd4h5j8DKPqQwU?network=devnet
+💡 Note: In actual cross-chain bridge, funds are sent to appropriate addresses based on swap direction
+✅ Sui escrow fill completed
 
-🔑 Step 11: 条件付きシークレット共有
-🔑 オーダーfusion-1753778285252-76d9aのシークレット共有条件確認: finality_confirmed
-⏳ Finality確認待機中...
-🔐 全リゾルバーとシークレット共有:
-  📦 オーダーID: fusion-1753778285252-76d9a
-  🔑 シークレット: 0x414b31d1...
-  👥 共有先: 5人のリゾルバー
-  📤 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664: 共有完了
-  📤 0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753: 共有完了
-  📤 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D: 共有完了
-  📤 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf: 共有完了
-  📤 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875: 共有完了
+🔑 Step 11: Conditional Secret Sharing
+🔑 Checking secret sharing condition for order fusion-1753781208122-t93pvn: finality_confirmed
+⏳ Waiting for finality confirmation...
+🔐 Sharing Secret with All Resolvers:
+  📦 Order ID: fusion-1753781208122-t93pvn
+  🔑 Secret: 0xb6edfeb6...
+  👥 Recipients: 5 resolvers
+  📤 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664: Sharing completed
+  📤 0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753: Sharing completed
+  📤 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D: Sharing completed
+  📤 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf: Sharing completed
+  📤 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875: Sharing completed
 
-🎉 Enhanced Ethereum -> Sui スワップ完了 (1inch Fusion+)!
+🎉 Enhanced Ethereum -> Sui swap completed (1inch Fusion+)!
 ==================================================
 
-📊 ETH → SUI スワップ サマリー:
-  🆔 Order ID: fusion-1753778285252-76d9a
-  📦 Escrow ID: 0x298eff475d5f0ef5b56118e545a98a8db295caa75d61cf5ce5939eb4886cc803
+📊 ETH → SUI Swap Summary:
+  🆔 Order ID: fusion-1753781208122-t93pvn
+  📦 Escrow ID: 0x796abb38af57e5c808866dafc866cb46079d47113ca8d075210e3be2a484987a
   💰 Source: 0.0001 ETH
   💸 Destination: 1000000000 SUI
-  ✅ Status: 成功
-  🔗 Enhanced Features: Dutch Auction, Safety Deposit, Finality Lock, Security Manager
-✅ Enhanced Ethereum -> Sui スワップ成功 (1inch Fusion+)
-🔄 Enhanced Sui -> Ethereum スワップ検証 (1inch Fusion+)...
-🔍 Enhanced Sui -> Ethereum スワップ検証開始 (1inch Fusion+)...
+  ✅ Status: Success
+  �� Enhanced Features: Dutch Auction, Safety Deposit, Finality Lock, Security Manager
+✅ Enhanced Ethereum -> Sui swap successful (1inch Fusion+)
+🔄 Enhanced Sui -> Ethereum swap verification (1inch Fusion+)...
+🔍 Starting Enhanced Sui -> Ethereum swap verification (1inch Fusion+)...
 ==================================================
 
-🛡️ Step 1: セキュリティチェック
-🛡️ 総合セキュリティチェック開始:
-  📦 TX Hash: sui-to-eth-1753778376571
+🛡️ Step 1: Security Check
+🛡️ Comprehensive Security Check Started:
+  📦 TX Hash: sui-to-eth-1753781294025
   👤 User: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   🎯 Action: resolver
-✅ Reentrancy Protection: sui-to-eth-1753778376571 - 安全
-🔐 アクセス制御チェック:
-  👤 ユーザー: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
-  🎯 アクション: resolver
-  🔧 リゾルバー権限: 許可
-✅ 総合セキュリティチェック通過
+✅ Reentrancy Protection: sui-to-eth-1753781294025 - Safe
+🔐 Access Control Check:
+  👤 User: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
+  🎯 Action: resolver
+  🔧 Resolver Permission: Granted
+✅ Comprehensive Security Check Passed
 
-📦 Step 2: Fusion Order作成
-📦 Fusion Order作成:
-  🆔 Order ID: fusion-1753778376571-pvlnwx
+📦 Step 2: Create Fusion Order
+📦 Creating Fusion Order:
+  🆔 Order ID: fusion-1753781294025-6l18mg
   👤 Maker: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   🔄 Route: SUI → ETH
   💰 Source Amount: 100000000
   💸 Destination Amount: 100000
 
-📤 Step 3: リレイヤーサービス経由でオーダー共有
-📤 リレイヤーサービス: オーダーfusion-1753778376571-pvlnwxをブロードキャスト中...
-  🌐 ソースチェーン: SUI
-  🎯 デスティネーションチェーン: ETH
-  💰 ソース金額: 100000000
-  💸 デスティネーション金額: 100000
-  👥 リゾルバー数: 5
-📞 リゾルバー0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664にオーダーfusion-1753778376571-pvlnwxを通知
-📞 リゾルバー0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753にオーダーfusion-1753778376571-pvlnwxを通知
-📞 リゾルバー0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44Dにオーダーfusion-1753778376571-pvlnwxを通知
-📞 リゾルバー0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcfにオーダーfusion-1753778376571-pvlnwxを通知
-📞 リゾルバー0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875にオーダーfusion-1753778376571-pvlnwxを通知
-🏁 オーダーfusion-1753778376571-pvlnwxのDutch auction開始
-👁️ オーダーfusion-1753778376571-pvlnwxのオークション監視開始
+📤 Step 3: Share Order via Relayer Service
+📤 Relayer Service: Broadcasting order fusion-1753781294025-6l18mg...
+  🌐 Source Chain: SUI
+  🎯 Destination Chain: ETH
+  💰 Source Amount: 100000000
+  �� Destination Amount: 100000
+  👥 Number of Resolvers: 5
+📞 Notifying resolver 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664 about order fusion-1753781294025-6l18mg
+📞 Notifying resolver 0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753 about order fusion-1753781294025-6l18mg
+📞 Notifying resolver 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D about order fusion-1753781294025-6l18mg
+📞 Notifying resolver 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf about order fusion-1753781294025-6l18mg
+📞 Notifying resolver 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875 about order fusion-1753781294025-6l18mg
+🏁 Starting Dutch auction for order fusion-1753781294025-6l18mg
+👁️ Starting auction monitoring for order fusion-1753781294025-6l18mg
 
-🏁 Step 4: Dutch Auction処理
-🏁 Dutch Auction 価格計算:
-  ⏰ 現在時刻: 2025-07-29T08:39:37.076Z
-  📅 オークション開始時刻: 2025-07-29T08:44:36.000Z
-  💰 市場レート: 1000
-  🚀 オークション前: 6000 (6x)
+🏁 Step 4: Dutch Auction Processing
+🏁 Dutch Auction Price Calculation:
+  ⏰ Current Time: 2025-07-29T09:28:14.530Z
+  📅 Auction Start Time: 2025-07-29T09:33:14.000Z
+  💰 Market Rate: 1000
+  🚀 Before Auction: 6000 (6x)
 
-⛽ Step 5: Gas価格調整
-📊 シミュレートされたBase Fee: 28 Gwei
+⛽ Step 5: Gas Price Adjustment
+📊 Simulated Base Fee: 25 Gwei
 ⛽ Gas Price Adjustment:
-  📊 チェーンID: 1
-  ⛽ 現在のBase Fee: 28 Gwei
-  📈 平均Base Fee: 45 Gwei
-  📉 変動率: -37.78%
-  🎯 変動閾値: 20.00%
-🔄 価格調整実行: 6000 → 2600.000000 (1.5x調整)
+  📊 Chain ID: 1
+  ⛽ Current Base Fee: 25 Gwei
+  📈 Average Base Fee: 30.5 Gwei
+  📉 Volatility Rate: -18.03%
+  🎯 Volatility Threshold: 20.00%
+✅ Price Adjustment Not Required: 6000
 
-🔑 Step 6: シークレットとハッシュロック生成
-📝 シークレット生成: 0x4462759a8f2d51175fcfdaa216558442a7624804ee6bb3d4f152a31c9f5d3ee4
-🔒 ハッシュロック生成: 0x29059aa3351f5ea4043499db2968752bb75335bb0ddadd16afc913109106a9c2
-⏰ Ethereum タイムロック設定: 1753781977
-⏰ Sui タイムロック設定: 1753781977076
+🔑 Step 6: Generate Secret and Hash Lock
+📝 Secret generated: 0x3bb70dfc84210ed36614ace07586b9ee9fea29b53d67fe7cde7575004f8b9c13
+🔒 Hash lock generated: 0x2b5be72db44c55955387dbdc3830a7ef6a45c83afc32d2a1eb9079d2180189dc
+⏰ Ethereum timelock set: 1753784894
+⏰ Sui timelock set: 1753784894531
 
-📦 Step 7: Safety Deposit付きSuiエスクロー作成
-🛡️ Safety Deposit計算:
-  💰 エスクロー金額: 1000000000 SUI
-  📊 レート: 10%
-  💸 計算額: 100000000 SUI
-  🔒 最終Safety Deposit: 1000000000 SUI
-💰 Safety Deposit付きエスクロー作成:
-  💸 基本金額: 1000000000 SUI
+📦 Step 7: Create Sui Escrow with Safety Deposit
+🛡️ Safety Deposit Calculation:
+  💰 Escrow Amount: 1000000000 SUI
+  📊 Rate: 10%
+  💸 Calculated Amount: 100000000 SUI
+  🔒 Final Safety Deposit: 1000000000 SUI
+💰 Creating Escrow with Safety Deposit:
+  💸 Base Amount: 1000000000 SUI
   🛡️ Safety Deposit: 1000000000 SUI
-  📊 総額: 2000000000 SUI
-  👤 リゾルバー: 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf
-🔍 Suiアカウント確認: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-🔍 Suiアカウント残高確認: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-💰 現在の総残高: 8992413780
-✅ 残高は十分です
-🔧 Sui トランザクション準備中...
-🔧 Sui トランザクション準備完了
-💰 金額: 2000000000
-⏰ タイムロック: 1753781977076
-🔒 ハッシュロック: 0x29059aa3351f5ea4043499db2968752bb75335bb0ddadd16afc913109106a9c2
-⛽ ガスコイン: 0x55ebefde8ff14cf3e50f14e2c806b369a2c07e8e910ad63a9f78c622723e9eb6
-🏁 Dutch Auction 価格計算:
-  ⏰ 現在時刻: 2025-07-29T08:39:39.077Z
-  📅 オークション開始時刻: 2025-07-29T08:44:36.000Z
-  💰 市場レート: 1
-  🚀 オークション前: 6 (6x)
-📊 オークション監視 (1/5):
-  💰 現在レート: 6
-💰 リゾルバー収益性チェック: 6 >= 0.9 = true
-💰 リゾルバー0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664がオーダーfusion-1753778376571-pvlnwxを実行可能
-⚡ オーダー実行:
-  📦 オーダーID: fusion-1753778376571-pvlnwx
-  👤 実行リゾルバー: 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664
-  💰 実行金額: 100000000
-📋 トランザクション結果: {
-  digest: 'J1yrpbUyuaKxJ2qkfjPYTaNfJFsM4698uQwVTUMarGfr',
+  📊 Total Amount: 2000000000 SUI
+  👤 Resolver: 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf
+🔍 Checking Sui account: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+🔍 Checking Sui account balance: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+💰 Current total balance: 8992403748
+✅ Balance is sufficient
+🔧 Preparing Sui transaction...
+🔧 Sui transaction preparation completed
+💰 Amount: 2000000000
+⏰ Time lock: 1753784894531
+🔒 Hash lock: 0x2b5be72db44c55955387dbdc3830a7ef6a45c83afc32d2a1eb9079d2180189dc
+⛽ Gas coin: 0x73256216160ef55cdba23e2d5c3c61263e2d64cf5f88164d3a999edcdf711b39
+📋 Transaction result: {
+  digest: 'B5R7HEE7ua84qCnsQcQLR12dKiTNFgjc4ok4RQMKQiUm',
   effects: {
     messageVersion: 'v1',
     status: { status: 'success' },
-    executedEpoch: '10',
+    executedEpoch: '11',
     gasUsed: {
       computationCost: '1000000',
       storageCost: '3929200',
@@ -523,281 +513,298 @@ Address Match: true
     },
     modifiedAtVersions: [ [Object] ],
     sharedObjects: [ [Object] ],
-    transactionDigest: 'J1yrpbUyuaKxJ2qkfjPYTaNfJFsM4698uQwVTUMarGfr',
+    transactionDigest: 'B5R7HEE7ua84qCnsQcQLR12dKiTNFgjc4ok4RQMKQiUm',
     created: [ [Object] ],
     mutated: [ [Object] ],
     gasObject: { owner: [Object], reference: [Object] },
-    eventsDigest: 'D5kBUTas6DoWLHQCZhmCCWikPBpLKfvSaRjqU378MFuF',
+    eventsDigest: '3joXhvx67zV182YqghsfjShc3DqHK8VDn56UeP8db265',
     dependencies: [
+      '3AW4jMci3tNqkY9C7jud8AaqgSwcvcrqd33PtFgEXRRT',
       '5K9i3G66QVdAM6GkHX9WBqYxoHkCmDUJ1biWM7aneJ4Z',
       '6SvDBNgUpMmhYgKngH6KzMtGhwD5pSwmXFxYotAyZxLh',
-      'BigUwzsSKcU54jwC8ostKsDkogmCi4amSmNzjnoXBvDw',
-      'Co7zJD1tN8nYBXke3xU7v7BhMoidLCFtDyfa2CxPbKrS'
+      'C1xxEFWpW5xZK2Mym8ehqjUJrgXQiymd4h5j8DKPqQwU'
     ]
   },
   objectChanges: [
     {
       type: 'mutated',
-      sender: '0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea',
+      sender: '0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4',
       owner: [Object],
       objectType: '0x2::coin::Coin<0x2::sui::SUI>',
-      objectId: '0x55ebefde8ff14cf3e50f14e2c806b369a2c07e8e910ad63a9f78c622723e9eb6',
-      version: '752528',
-      previousVersion: '752436',
-      digest: 'HTaqPXzcM7bNkuDwRF6gLUxEspSNK4WjWW8pnEaAfNjM'
+      objectId: '0x73256216160ef55cdba23e2d5c3c61263e2d64cf5f88164d3a999edcdf711b39',
+      version: '808593',
+      previousVersion: '808502',
+      digest: 'GS1Ye4FFEac91JyuqAZ2itdUSDTQXsXwpVxt7yVtW9To'
     },
     {
       type: 'created',
-      sender: '0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea',
+      sender: '0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4',
       owner: [Object],
       objectType: '0x68fe9550d8f0144a92a4c0af47af3dd829885bbf2e1134ce05059f8d2e3a5234::cross_chain_escrow::CrossChainEscrow<0x2::sui::SUI>',
-      objectId: '0x5565cb86a5c158e2d94d984e9f9e886420226089fc7235a0cfbe0221cf0698ce',
-      version: '752528',
-      digest: '9d9NSQ6UMCqrfizM58KEnse4cT3LbEN92ak5EWJqsPJa'
+      objectId: '0xb74940054418b3fac01b1afb5f148925f4a4999e222c24a706700b44ef9caceb',
+      version: '808593',
+      digest: '7yFUskRJpbDzGg6Qa5BbkmwdciLFuAa8zuJGYtu7bkvN'
     }
   ],
   confirmedLocalExecution: false
 }
-📦 Sui エスクロー作成: 0x5565cb86a5c158e2d94d984e9f9e886420226089fc7235a0cfbe0221cf0698ce
+📦 Sui escrow created: 0xb74940054418b3fac01b1afb5f148925f4a4999e222c24a706700b44ef9caceb
 
-🔄 Step 8: Suiエスクロー フィル
-🔐 条件付きシークレット共有開始: 0x5565cb86a5c158e2d94d984e9f9e886420226089fc7235a0cfbe0221cf0698ce
-⏳ シークレット共有遅延待機中... (300秒)
-✅ オーダーfusion-1753778376571-pvlnwx実行完了
-🔑 シークレットをリゾルバー0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcfと共有完了
-  📝 オーダーID: 0x5565cb86a5c158e2d94d984e9f9e886420226089fc7235a0cfbe0221cf0698ce
-  🔐 シークレット: 0x4462759a...
-🔍 Suiアカウント残高確認: 0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea
-💰 現在の総残高: 6988462700
-✅ 残高は十分です
-🔧 Sui エスクロー フィル準備...
-📦 エスクローID: 0x5565cb86a5c158e2d94d984e9f9e886420226089fc7235a0cfbe0221cf0698ce
-💰 総金額: 1000000000 SUI
-🔑 シークレット: 0x4462759a8f2d51175fcfdaa216558442a7624804ee6bb3d4f152a31c9f5d3ee4
-📋 スワップ方向: Sui -> Sepolia
-📤 送金先: Resolverアドレス (Resolver2: 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf, Resolver3: 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875)
-🔄 Sui Resolver2がpartial fill開始: 500000000 SUI
-✅ Sui Resolver2 フィル完了: {
-  digest: 'Djnr4zdx2g8FCVgGzzr9FbB7SZEE56rhStM796aeyYea',
+🔄 Step 8: Fill Sui Escrow
+🔐 Conditional Secret Sharing Started: 0xb74940054418b3fac01b1afb5f148925f4a4999e222c24a706700b44ef9caceb
+⏳ Waiting for secret sharing delay... (300 seconds)
+🏁 Dutch Auction Price Calculation:
+  ⏰ Current Time: 2025-07-29T09:28:16.530Z
+  📅 Auction Start Time: 2025-07-29T09:33:14.000Z
+  💰 Market Rate: 1
+  🚀 Before Auction: 6 (6x)
+📊 Auction Monitoring (1/5):
+  💰 Current Rate: 6
+💰 Resolver Profitability Check: 6 >= 0.9 = true
+💰 Resolver 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664 can execute order fusion-1753781294025-6l18mg
+⚡ Executing Order:
+  📦 Order ID: fusion-1753781294025-6l18mg
+  👤 Executing Resolver: 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664
+  💰 Execution Amount: 100000000
+✅ Order fusion-1753781294025-6l18mg execution completed
+🔑 Secret shared with resolver 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf completed
+  📝 Order ID: 0xb74940054418b3fac01b1afb5f148925f4a4999e222c24a706700b44ef9caceb
+  🔐 Secret: 0x3bb70dfc...
+🔍 Checking Sui account balance: 0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4
+💰 Current total balance: 6988452668
+✅ Balance is sufficient
+🔧 Preparing Sui escrow fill...
+📦 Escrow ID: 0xb74940054418b3fac01b1afb5f148925f4a4999e222c24a706700b44ef9caceb
+💰 Total amount: 1000000000 SUI
+🔑 Secret: 0x3bb70dfc84210ed36614ace07586b9ee9fea29b53d67fe7cde7575004f8b9c13
+ Swap direction: Sui -> Sepolia
+📤 Recipient: Resolver addresses (Resolver2: 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf, Resolver3: 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875)
+🔄 Sui Resolver2 starting partial fill: 500000000 SUI
+✅ Sui Resolver2 fill completed: {
+  digest: '4ppwJUYxxir9Njp9unXn595AXRaAwnsPkFygjFcNfNj7',
   effects: {
     messageVersion: 'v1',
     status: { status: 'success' },
-    executedEpoch: '10',
+    executedEpoch: '11',
     gasUsed: {
       computationCost: '1000000',
-      storageCost: '8648800',
-      storageRebate: '8073252',
-      nonRefundableStorageFee: '81548'
+      storageCost: '9150400',
+      storageRebate: '8569836',
+      nonRefundableStorageFee: '86564'
     },
     modifiedAtVersions: [ [Object], [Object], [Object], [Object] ],
     sharedObjects: [ [Object], [Object], [Object] ],
-    transactionDigest: 'Djnr4zdx2g8FCVgGzzr9FbB7SZEE56rhStM796aeyYea',
+    transactionDigest: '4ppwJUYxxir9Njp9unXn595AXRaAwnsPkFygjFcNfNj7',
     created: [ [Object] ],
     mutated: [ [Object], [Object], [Object] ],
     deleted: [ [Object] ],
     gasObject: { owner: [Object], reference: [Object] },
-    eventsDigest: 'CJMyNxYB91nejWqGojXXXj3XQP5FBDPQiNmP9tGVj38A',
+    eventsDigest: 'vwgqdVpERtqXqVj64dBX9QvWhkQsehXmKXJQZy2CLHq',
     dependencies: [
       '5K9i3G66QVdAM6GkHX9WBqYxoHkCmDUJ1biWM7aneJ4Z',
       '6SvDBNgUpMmhYgKngH6KzMtGhwD5pSwmXFxYotAyZxLh',
-      '9YVM2bUNo14dDq8eP2TRx1bTobK31HQ6kCWDNmr6NoDL',
-      'Co7zJD1tN8nYBXke3xU7v7BhMoidLCFtDyfa2CxPbKrS',
-      'J1yrpbUyuaKxJ2qkfjPYTaNfJFsM4698uQwVTUMarGfr'
+      '7Gz8EWiBJArAUiDd5KRdM9RbFWutsATqn7D3YvfeDYro',
+      'B5R7HEE7ua84qCnsQcQLR12dKiTNFgjc4ok4RQMKQiUm',
+      'C1xxEFWpW5xZK2Mym8ehqjUJrgXQiymd4h5j8DKPqQwU'
     ]
   },
   confirmedLocalExecution: false
 }
-📋 Resolver2送金詳細:
-  💰 金額: 500000000 SUI
-  📤 送金先: 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf
-🔗 Resolver2送金トランザクション: https://suiexplorer.com/txblock/Djnr4zdx2g8FCVgGzzr9FbB7SZEE56rhStM796aeyYea?network=devnet
-🔗 受取アドレス入金履歴: https://suiexplorer.com/txblock/Djnr4zdx2g8FCVgGzzr9FbB7SZEE56rhStM796aeyYea?network=devnet
-🔄 Sui Resolver3がpartial fill開始: 500000000 SUI
-✅ Sui Resolver3 フィル完了: {
-  digest: 'DjvV4Gj1sH7dAGGjcFVVyEQu1sLmXmmYeQqV6zUxBLaV',
+📋 Resolver2 transfer details:
+  💰 Amount: 500000000 SUI
+  📤 Recipient: 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf
+🔗 Resolver2 transfer transaction: https://suiexplorer.com/txblock/4ppwJUYxxir9Njp9unXn595AXRaAwnsPkFygjFcNfNj7?network=devnet
+🔗 Recipient deposit history: https://suiexplorer.com/txblock/4ppwJUYxxir9Njp9unXn595AXRaAwnsPkFygjFcNfNj7?network=devnet
+🔄 Sui Resolver3 starting partial fill: 500000000 SUI
+✅ Sui Resolver3 fill completed: {
+  digest: 'EuXRMRWRF41Nf6bj6Qj25VNfz8ATTAWbSGXFiktvowDG',
   effects: {
     messageVersion: 'v1',
     status: { status: 'success' },
-    executedEpoch: '10',
+    executedEpoch: '11',
     gasUsed: {
       computationCost: '1000000',
-      storageCost: '8648800',
-      storageRebate: '7584192',
-      nonRefundableStorageFee: '76608'
+      storageCost: '9150400',
+      storageRebate: '8080776',
+      nonRefundableStorageFee: '81624'
     },
     modifiedAtVersions: [ [Object], [Object], [Object] ],
     sharedObjects: [ [Object], [Object], [Object] ],
-    transactionDigest: 'DjvV4Gj1sH7dAGGjcFVVyEQu1sLmXmmYeQqV6zUxBLaV',
+    transactionDigest: 'EuXRMRWRF41Nf6bj6Qj25VNfz8ATTAWbSGXFiktvowDG',
     created: [ [Object] ],
     mutated: [ [Object], [Object], [Object] ],
     gasObject: { owner: [Object], reference: [Object] },
-    eventsDigest: '8W8hYMf3nCxY2uSkfx9x9i6EG9tkvBR1JYMvwejZEfG3',
+    eventsDigest: 'GNe2Kj3qY9tAh6u4s5sjggkUmi1conedEojbaNbFXNhK',
     dependencies: [
+      '2CQ9qVJe4HCQeoUWQBXosBcJ9EPRULtvXLKoHkf1Vdnx',
+      '4ppwJUYxxir9Njp9unXn595AXRaAwnsPkFygjFcNfNj7',
       '5K9i3G66QVdAM6GkHX9WBqYxoHkCmDUJ1biWM7aneJ4Z',
-      '6SvDBNgUpMmhYgKngH6KzMtGhwD5pSwmXFxYotAyZxLh',
-      'D8o1PG8XzLajMZWQZXoZhmCvYdnDZYRMVREn3b6pVHw3',
-      'Djnr4zdx2g8FCVgGzzr9FbB7SZEE56rhStM796aeyYea'
+      '6SvDBNgUpMmhYgKngH6KzMtGhwD5pSwmXFxYotAyZxLh'
     ]
   },
   confirmedLocalExecution: false
 }
-📋 Resolver3送金詳細:
-  💰 金額: 500000000 SUI
-  📤 送金先: 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875
-🔗 Resolver3送金トランザクション: https://suiexplorer.com/txblock/DjvV4Gj1sH7dAGGjcFVVyEQu1sLmXmmYeQqV6zUxBLaV?network=devnet
-🔗 受取アドレス入金履歴: https://suiexplorer.com/txblock/DjvV4Gj1sH7dAGGjcFVVyEQu1sLmXmmYeQqV6zUxBLaV?network=devnet
-✅ Sui エスクロー フィル完了（2人のResolverによるpartial fill）
-📋 フィル詳細:
+📋 Resolver3 transfer details:
+  💰 Amount: 500000000 SUI
+  📤 Recipient: 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875
+🔗 Resolver3 transfer transaction: https://suiexplorer.com/txblock/EuXRMRWRF41Nf6bj6Qj25VNfz8ATTAWbSGXFiktvowDG?network=devnet
+🔗 Recipient deposit history: https://suiexplorer.com/txblock/EuXRMRWRF41Nf6bj6Qj25VNfz8ATTAWbSGXFiktvowDG?network=devnet
+✅ Sui escrow fill completed (partial fill by 2 resolvers)
+📋 Fill details:
   👤 Resolver2: 500000000 SUI → 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf
   👤 Resolver3: 500000000 SUI → 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875
-  💰 合計: 1000000000 SUI
-📋 スワップ方向: Sui -> Sepolia
-🔗 送金トランザクション履歴:
-  📤 Resolver2: https://suiexplorer.com/txblock/Djnr4zdx2g8FCVgGzzr9FbB7SZEE56rhStM796aeyYea?network=devnet
-  📤 Resolver3: https://suiexplorer.com/txblock/DjvV4Gj1sH7dAGGjcFVVyEQu1sLmXmmYeQqV6zUxBLaV?network=devnet
-🔗 受取アドレス入金履歴:
-  📥 入金1: https://suiexplorer.com/txblock/Djnr4zdx2g8FCVgGzzr9FbB7SZEE56rhStM796aeyYea?network=devnet
-  📥 入金2: https://suiexplorer.com/txblock/DjvV4Gj1sH7dAGGjcFVVyEQu1sLmXmmYeQqV6zUxBLaV?network=devnet
-💡 注意: 実際のクロスチェーンブリッジでは、スワップ方向に応じて適切なアドレスに送金されます
-✅ Sui エスクロー フィル完了
+  💰 Total: 1000000000 SUI
+📋 Swap direction: Sui -> Sepolia
+🔗 Transfer transaction history:
+  📤 Resolver2: https://suiexplorer.com/txblock/4ppwJUYxxir9Njp9unXn595AXRaAwnsPkFygjFcNfNj7?network=devnet
+  📤 Resolver3: https://suiexplorer.com/txblock/EuXRMRWRF41Nf6bj6Qj25VNfz8ATTAWbSGXFiktvowDG?network=devnet
+🔗 Recipient deposit history:
+  📥 Deposit1: https://suiexplorer.com/txblock/4ppwJUYxxir9Njp9unXn595AXRaAwnsPkFygjFcNfNj7?network=devnet
+  📥 Deposit2: https://suiexplorer.com/txblock/EuXRMRWRF41Nf6bj6Qj25VNfz8ATTAWbSGXFiktvowDG?network=devnet
+💡 Note: In actual cross-chain bridge, funds are sent to appropriate addresses based on swap direction
+✅ Sui escrow fill completed
 
-⏳ Step 9: Finality待機
-⏳ チェーン2のfinality待機中...
-📊 必要ブロック数: 100
-🎯 基準ブロック: 12345
-📈 Finality進捗: 12365/12445 (20.0%)
-📈 Finality進捗: 12385/12445 (40.0%)
-📈 Finality進捗: 12405/12445 (60.0%)
-📈 Finality進捗: 12425/12445 (80.0%)
-📈 Finality進捗: 12445/12445 (100.0%)
-✅ チェーン2のfinality確認完了
+⏳ Step 9: Wait for Finality
+⏳ Waiting for chain 2 finality...
+📊 Required Blocks: 100
+🎯 Base Block: 12345
+📈 Finality Progress: 12365/12445 (20.0%)
+📈 Finality Progress: 12385/12445 (40.0%)
+📈 Finality Progress: 12405/12445 (60.0%)
+📈 Finality Progress: 12425/12445 (80.0%)
+📈 Finality Progress: 12445/12445 (100.0%)
+✅ Chain 2 finality confirmation completed
 
-🔄 Step 10: Ethereumエスクロー作成・フィル
-🛡️ Safety Deposit計算:
-  💰 エスクロー金額: 0.0001 ETH
-  📊 レート: 10%
-  💸 計算額: 0.00001 ETH
-  🔒 最終Safety Deposit: 0.001 ETH
-💰 Safety Deposit付きエスクロー作成:
-  💸 基本金額: 0.0001 ETH
+🔄 Step 10: Create and Fill Ethereum Escrow
+🛡️ Safety Deposit Calculation:
+  💰 Escrow Amount: 0.0001 ETH
+  📊 Rate: 10%
+  💸 Calculated Amount: 0.00001 ETH
+  🔒 Final Safety Deposit: 0.001 ETH
+💰 Creating Escrow with Safety Deposit:
+  💸 Base Amount: 0.0001 ETH
   🛡️ Safety Deposit: 0.001 ETH
-  📊 総額: 0.0011 ETH
-  👤 リゾルバー: 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664
-🔧 Ethereum エスクロー作成準備...
-📝 ハッシュロック: 0x29059aa3351f5ea4043499db2968752bb75335bb0ddadd16afc913109106a9c2
-⏰ タイムロック: 1753781977
-💰 金額: 0.0011 ETH
-👤 テイカー: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
-💰 ユーザー残高: 1.247361685935978606 ETH
-🔍 デバッグ情報:
-  - ハッシュロック型: string, 長さ: 66
-  - タイムロック型: bigint, 値: 1753781977
-  - 金額型: bigint, 値: 1100000000000000
-  - 現在時刻: 1753778391
-  - タイムロック > 現在時刻: true
-  - アドレス有効性: true
-  - コントラクトアドレス: 0x5c38E80AbD0dCc58aa9078B9206e7dFBc7C4918E
-  - ネットワーク: 11155111
-  - ガス価格: 0.005913678 Gwei
-📤 トランザクション送信中...
-📋 トランザクションハッシュ: 0xdc3f3320322592db75ca33fb426ceccfe08b8f8814b6eb621efb2c0d9bcfe8a5
-📋 トランザクション完了: success
-📦 エスクローID取得: 0x0bf9d301195ef64f156ee40c4efee768ad63cf2f8b81bf50e4c3ca71ea0bde27
-🔍 エスクロー情報確認:
+  📊 Total Amount: 0.0011 ETH
+  👤 Resolver: 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664
+🔧 Preparing Ethereum escrow creation...
+📝 Hash lock: 0x2b5be72db44c55955387dbdc3830a7ef6a45c83afc32d2a1eb9079d2180189dc
+⏰ Time lock: 1753784894
+💰 Amount: 0.0011 ETH
+👤 Taker: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
+💰 User balance: 1.245358581725213428 ETH
+🔍 Debug information:
+  - Hash lock type: string, length: 66
+  - Time lock type: bigint, value: 1753784894
+  - Amount type: bigint, value: 1100000000000000
+  - Current time: 1753781308
+  - Time lock > current time: true
+  - Address validity: true
+  - Contract address: 0x5c38E80AbD0dCc58aa9078B9206e7dFBc7C4918E
+  - Network: 11155111
+  - Gas price: 0.005924361 Gwei
+📤 Sending transaction...
+📋 Transaction hash: 0x08958d459ba56bd57040bcd550f476f414d963140f9b1d4c84bdfce1dfcbb7bc
+📋 Transaction completed: success
+📦 Escrow ID retrieved: 0xe82549603e5bd98780c223f6f0677d3000a5bf340c1d39079f96d0eee7ca2e75
+🔍 Escrow information verification:
   👤 Maker: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   👤 Taker: 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   💰 Total Amount: 0.0011 ETH
   💰 Remaining Amount: 0.0011 ETH
   ✅ Completed: false
   ❌ Refunded: false
-✅ エスクロー作成確認済み
-📦 Ethereum エスクロー作成: 0x0bf9d301195ef64f156ee40c4efee768ad63cf2f8b81bf50e4c3ca71ea0bde27
-🔐 条件付きシークレット共有開始: 0x0bf9d301195ef64f156ee40c4efee768ad63cf2f8b81bf50e4c3ca71ea0bde27
-⏳ シークレット共有遅延待機中... (300秒)
-🔑 シークレットをリゾルバー0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664と共有完了
-  📝 オーダーID: 0x0bf9d301195ef64f156ee40c4efee768ad63cf2f8b81bf50e4c3ca71ea0bde27
-  🔐 シークレット: 0x4462759a...
-🔧 Ethereum エスクロー フィル準備...
-📦 エスクローID: 0x0bf9d301195ef64f156ee40c4efee768ad63cf2f8b81bf50e4c3ca71ea0bde27
-💰 総金額: 0.0001 ETH
-🔑 シークレット: 0x4462759a8f2d51175fcfdaa216558442a7624804ee6bb3d4f152a31c9f5d3ee4
-🔍 エスクロー事前確認:
-  💰 残額: 0.0011 ETH
-  ✅ 完了済み: false
-  ❌ 返金済み: false
-  🔒 ハッシュロック: 0x29059aa3351f5ea4043499db2968752bb75335bb0ddadd16afc913109106a9c2
-🔍 シークレット検証:
-  🔑 シークレット: 0x4462759a8f2d51175fcfdaa216558442a7624804ee6bb3d4f152a31c9f5d3ee4
-  🔒 計算されたハッシュ: 0x29059aa3351f5ea4043499db2968752bb75335bb0ddadd16afc913109106a9c2
-  🔒 保存されたハッシュ: 0x29059aa3351f5ea4043499db2968752bb75335bb0ddadd16afc913109106a9c2
-  ✅ 検証結果: true
-🔄 Resolver2がpartial fill開始: 0.00005 ETH
-📤 Resolver2トランザクション送信中...
-📋 Resolver2トランザクションハッシュ: 0xea7967a8d9656d9d6f9f75ba4bc50c26dfa4fb19a4a447e0352bfda186b7e134
-✅ Resolver2トランザクション完了: reverted
-🔄 Resolver2が受取アドレスに送金開始: 0.00005 ETH
-📋 Resolver2送金ハッシュ: 0x603e623cc9e3046d0ced3a4d79e9b57a0298dcb6a2f8b7a0d3b04bfb02a4510d
-✅ Resolver2送金完了: success
-🔗 Resolver2送金トランザクション: https://sepolia.etherscan.io/tx/0x603e623cc9e3046d0ced3a4d79e9b57a0298dcb6a2f8b7a0d3b04bfb02a4510d
-🔗 ユーザーアドレス入金履歴: https://sepolia.etherscan.io/tx/0x603e623cc9e3046d0ced3a4d79e9b57a0298dcb6a2f8b7a0d3b04bfb02a4510d#eventlog
-🔍 Resolver2フィル後確認:
-  💰 残額: 0.0011 ETH
-  ✅ 完了済み: false
-🔄 Resolver3がpartial fill開始: 0.00005 ETH
-📤 Resolver3トランザクション送信中...
-📋 Resolver3トランザクションハッシュ: 0x4c79f8812096cbe4f797636dbd60a9c6ac9854785c83c20903be28a2c1c96851
-🧹 Reentrancy Guard クリーンアップ: sui-to-eth-1753778376571
-✅ Resolver3トランザクション完了: reverted
-🔄 Resolver3が受取アドレスに送金開始: 0.00005 ETH
-📋 Resolver3送金ハッシュ: 0x7c768ea7f192fb544dcfc88aa92b9ffa2472f9ab88cb3082946b441c29aea0a6
-✅ Resolver3送金完了: success
-🔗 Resolver3送金トランザクション: https://sepolia.etherscan.io/tx/0x7c768ea7f192fb544dcfc88aa92b9ffa2472f9ab88cb3082946b441c29aea0a6
-🔗 ユーザーアドレス入金履歴: https://sepolia.etherscan.io/tx/0x7c768ea7f192fb544dcfc88aa92b9ffa2472f9ab88cb3082946b441c29aea0a6#eventlog
-🔍 最終確認:
-  💰 残額: 0.0011 ETH
-  ✅ 完了済み: false
-✅ Ethereum エスクロー フィル完了（2人のResolverによるpartial fill）
-📋 フィル詳細:
+✅ Escrow creation confirmed
+📦 Ethereum escrow created: 0xe82549603e5bd98780c223f6f0677d3000a5bf340c1d39079f96d0eee7ca2e75
+🔐 Conditional Secret Sharing Started: 0xe82549603e5bd98780c223f6f0677d3000a5bf340c1d39079f96d0eee7ca2e75
+⏳ Waiting for secret sharing delay... (300 seconds)
+🔑 Secret shared with resolver 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664 completed
+  📝 Order ID: 0xe82549603e5bd98780c223f6f0677d3000a5bf340c1d39079f96d0eee7ca2e75
+  🔐 Secret: 0x3bb70dfc...
+🔧 Preparing Ethereum escrow fill...
+📦 Escrow ID: 0xe82549603e5bd98780c223f6f0677d3000a5bf340c1d39079f96d0eee7ca2e75
+💰 Total amount: 0.0001 ETH
+🔑 Secret: 0x3bb70dfc84210ed36614ace07586b9ee9fea29b53d67fe7cde7575004f8b9c13
+🔍 Pre-escrow verification:
+  💰 Remaining amount: 0.0011 ETH
+  ✅ Completed: false
+  ❌ Refunded: false
+  🔒 Hash lock: 0x2b5be72db44c55955387dbdc3830a7ef6a45c83afc32d2a1eb9079d2180189dc
+🔍 Secret verification:
+  🔑 Secret: 0x3bb70dfc84210ed36614ace07586b9ee9fea29b53d67fe7cde7575004f8b9c13
+  🔒 Calculated hash: 0x2b5be72db44c55955387dbdc3830a7ef6a45c83afc32d2a1eb9079d2180189dc
+  🔒 Stored hash: 0x2b5be72db44c55955387dbdc3830a7ef6a45c83afc32d2a1eb9079d2180189dc
+  ✅ Verification result: true
+🔄 Resolver2 starting partial fill: 0.00005 ETH
+📤 Sending Resolver2 transaction...
+📋 Resolver2 transaction hash: 0x9a2a7eeb44585ef5d9e24b57369d1bb0a215c8a57fdcd9d4e483a32bd9861125
+✅ Resolver2 transaction completed: reverted
+🔄 Resolver2 starting transfer to recipient address: 0.00005 ETH
+📋 Resolver2 transfer hash: 0x73acab33c7f2b3270a045814a15e6cfccb3155f01ff0d19ec6c961b1efab0c34
+✅ Resolver2 transfer completed: success
+🔗 Resolver2 transfer transaction: https://sepolia.etherscan.io/tx/0x73acab33c7f2b3270a045814a15e6cfccb3155f01ff0d19ec6c961b1efab0c34
+🔗 User address deposit history: https://sepolia.etherscan.io/tx/0x73acab33c7f2b3270a045814a15e6cfccb3155f01ff0d19ec6c961b1efab0c34#eventlog
+🔍 Post-Resolver2 fill verification:
+  💰 Remaining amount: 0.0011 ETH
+  ✅ Completed: false
+🔄 Resolver3 starting partial fill: 0.00005 ETH
+📤 Sending Resolver3 transaction...
+📋 Resolver3 transaction hash: 0x797cb3b84018b32ad416eddcbe530e7012d7238ffe74fc82aa1a3b58efd57995
+✅ Resolver3 transaction completed: reverted
+🔄 Resolver3 starting transfer to recipient address: 0.00005 ETH
+🧹 Reentrancy Guard Cleanup: sui-to-eth-1753781294025
+📋 Resolver3 transfer hash: 0x18ae46f94f322741a916fff3de81e531d7d2bc858775c9ebef5c31d8a05f47e7
+✅ Resolver3 transfer completed: success
+🔗 Resolver3 transfer transaction: https://sepolia.etherscan.io/tx/0x18ae46f94f322741a916fff3de81e531d7d2bc858775c9ebef5c31d8a05f47e7
+🔗 User address deposit history: https://sepolia.etherscan.io/tx/0x18ae46f94f322741a916fff3de81e531d7d2bc858775c9ebef5c31d8a05f47e7#eventlog
+🔍 Final verification:
+  💰 Remaining amount: 0.0011 ETH
+  ✅ Completed: false
+✅ Ethereum escrow fill completed (partial fill by 2 resolvers)
+📋 Fill details:
   👤 Resolver2: 0.00005 ETH → 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
   👤 Resolver3: 0.00005 ETH → 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D
-  💰 合計: 0.0001 ETH
-🔗 送金トランザクション履歴:
-  📤 Resolver2: https://sepolia.etherscan.io/tx/0x603e623cc9e3046d0ced3a4d79e9b57a0298dcb6a2f8b7a0d3b04bfb02a4510d
-  📤 Resolver3: https://sepolia.etherscan.io/tx/0x7c768ea7f192fb544dcfc88aa92b9ffa2472f9ab88cb3082946b441c29aea0a6
-🔗 ユーザーアドレス入金履歴:
-  📥 入金1: https://sepolia.etherscan.io/tx/0x603e623cc9e3046d0ced3a4d79e9b57a0298dcb6a2f8b7a0d3b04bfb02a4510d#eventlog
-  📥 入金2: https://sepolia.etherscan.io/tx/0x7c768ea7f192fb544dcfc88aa92b9ffa2472f9ab88cb3082946b441c29aea0a6#eventlog
-✅ Ethereum エスクロー フィル完了
+  💰 Total: 0.0001 ETH
+🔗 Transfer transaction history:
+  📤 Resolver2: https://sepolia.etherscan.io/tx/0x73acab33c7f2b3270a045814a15e6cfccb3155f01ff0d19ec6c961b1efab0c34
+  📤 Resolver3: https://sepolia.etherscan.io/tx/0x18ae46f94f322741a916fff3de81e531d7d2bc858775c9ebef5c31d8a05f47e7
+🔗 User address deposit history:
+  📥 Deposit 1: https://sepolia.etherscan.io/tx/0x73acab33c7f2b3270a045814a15e6cfccb3155f01ff0d19ec6c961b1efab0c34#eventlog
+  📥 Deposit 2: https://sepolia.etherscan.io/tx/0x18ae46f94f322741a916fff3de81e531d7d2bc858775c9ebef5c31d8a05f47e7#eventlog
+✅ Ethereum escrow fill completed
 
-🔑 Step 11: 条件付きシークレット共有
-🔑 オーダーfusion-1753778376571-pvlnwxのシークレット共有条件確認: finality_confirmed
-⏳ Finality確認待機中...
-🔐 全リゾルバーとシークレット共有:
-  📦 オーダーID: fusion-1753778376571-pvlnwx
-  🔑 シークレット: 0x4462759a...
-  👥 共有先: 5人のリゾルバー
-  📤 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664: 共有完了
-  📤 0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753: 共有完了
-  📤 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D: 共有完了
-  📤 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf: 共有完了
-  📤 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875: 共有完了
+🔑 Step 11: Conditional Secret Sharing
+🔑 Checking secret sharing condition for order fusion-1753781294025-6l18mg: finality_confirmed
+⏳ Waiting for finality confirmation...
+🔐 Sharing Secret with All Resolvers:
+  📦 Order ID: fusion-1753781294025-6l18mg
+  🔑 Secret: 0x3bb70dfc...
+  👥 Recipients: 5 resolvers
+  📤 0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664: Sharing completed
+  📤 0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753: Sharing completed
+  📤 0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D: Sharing completed
+  📤 0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf: Sharing completed
+  📤 0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875: Sharing completed
 
-🎉 Enhanced Sui -> Ethereum スワップ完了 (1inch Fusion+)!
+🎉 Enhanced Sui -> Ethereum swap completed (1inch Fusion+)!
 ==================================================
 
-📊 SUI → ETH スワップ サマリー:
-  🆔 Order ID: fusion-1753778376571-pvlnwx
-  📦 Escrow ID: 0x0bf9d301195ef64f156ee40c4efee768ad63cf2f8b81bf50e4c3ca71ea0bde27
+📊 SUI → ETH Swap Summary:
+  🆔 Order ID: fusion-1753781294025-6l18mg
+  📦 Escrow ID: 0xe82549603e5bd98780c223f6f0677d3000a5bf340c1d39079f96d0eee7ca2e75
   💰 Source: 1000000000 SUI
   💸 Destination: 0.0001 ETH
-  ✅ Status: 成功
-  🔗 Enhanced Features: Dutch Auction, Safety Deposit, Finality Lock, Security Manager
-✅ Enhanced Sui -> Ethereum スワップ成功 (1inch Fusion+)
+  ✅ Status: Success
+  �� Enhanced Features: Dutch Auction, Safety Deposit, Finality Lock, Security Manager
+✅ Enhanced Sui -> Ethereum swap successful (1inch Fusion+)
 
-📊 1inch Fusion+ テスト結果サマリー:
-  🔗 Enhanced Ethereum -> Sui: ✅ 成功
-  🔗 Enhanced Sui -> Ethereum: ✅ 成功
+📊 1inch Fusion+ Test Results Summary:
+  🔗 Enhanced Ethereum -> Sui: ✅ Success
+  🔗 Enhanced Sui -> Ethereum: ✅ Success
   🚀 Fusion+ Features:
+    🏁 Dutch Auction: ✅ Verified working
+    🛡️ Safety Deposit: ✅ Verified working
+    🌳 Merkle Tree Secrets: ✅ Verified working
+    ⏳ Finality Lock: ✅ Verified working
     🏁 Dutch Auction: ✅ 動作確認済み
     🛡️ Safety Deposit: ✅ 動作確認済み
     🌳 Merkle Tree Secrets: ✅ 動作確認済み
@@ -805,12 +812,12 @@ Address Match: true
     📤 Relayer Service: ✅ 動作確認済み
     ⛽ Gas Price Adjustment: ✅ 動作確認済み
     🔒 Security Manager: ✅ 動作確認済み
-🎉 1inch Fusion+ 準拠 双方向クロスチェーンスワップ検証完了!
-🔗 総合トランザクション履歴:
-  📤 ユーザー Ethereum 入金: https://sepolia.etherscan.io/address/0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D#tokentxns
-  📤 ユーザー Sui 入金: https://suiexplorer.com/address/0x372a9d44b2c26706c9c0394928a2c792fe29fd43476b3cf5a89133acf6cf85ea?network=devnet
-  📤 Resolver2 Ethereum 入金: https://sepolia.etherscan.io/address/0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664#tokentxns
-  📤 Resolver3 Ethereum 入金: https://sepolia.etherscan.io/address/0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753#tokentxns
-  📤 Resolver2 Sui 入金: https://suiexplorer.com/address/0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf?network=devnet
-  📤 Resolver3 Sui 入金: https://suiexplorer.com/address/0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875?network=devnet
+🎉 1inch Fusion+ compliant bidirectional cross-chain swap verification completed!
+🔗 Overall Transaction History:
+  📤 User Ethereum Deposit: https://sepolia.etherscan.io/address/0xf87aaAd9d6C1b3ddD0302FE16B30b5E76827B44D#tokentxns
+  📤 User Sui Deposit: https://suiexplorer.com/address/0x29a4e128345f3f86b1220f2425ea6cc02f5c093c42b437d4a536fd08f51bd8e4?network=devnet
+  �� Resolver2 Ethereum Deposit: https://sepolia.etherscan.io/address/0x7F866C9F0857aB2F09B37f1D39A7Fe0f47b82664#tokentxns
+  �� Resolver3 Ethereum Deposit: https://sepolia.etherscan.io/address/0x634B90dc5ABe1DbaDecBfC4dbBa99B7C6ea28753#tokentxns
+  📤 Resolver2 Sui Deposit: https://suiexplorer.com/address/0xbf7d5d6172973a8ad84a8f6f09fbdf6499bdac17ca6a396fd5e62a5b76f4dbcf?network=devnet
+  📤 Resolver3 Sui Deposit: https://suiexplorer.com/address/0x0d5fb5f161ee47d15caedc308887d34ec6b13e3b965b0afcc35e063bf75ba875?network=devnet
 ```

@@ -109,14 +109,14 @@ export class DutchAuction {
     const currentTime = Date.now() / 1000;
     const auctionStartTime = orderTimestamp + this.config.auctionStartDelay;
     
-    console.log(`🏁 Dutch Auction 価格計算:`);
-    console.log(`  ⏰ 現在時刻: ${new Date(currentTime * 1000).toISOString()}`);
-    console.log(`  📅 オークション開始時刻: ${new Date(auctionStartTime * 1000).toISOString()}`);
-    console.log(`  💰 市場レート: ${marketRate}`);
+    console.log(`🏁 Dutch Auction Price Calculation:`);
+    console.log(`  ⏰ Current Time: ${new Date(currentTime * 1000).toISOString()}`);
+    console.log(`  📅 Auction Start Time: ${new Date(auctionStartTime * 1000).toISOString()}`);
+    console.log(`  💰 Market Rate: ${marketRate}`);
     
     if (currentTime < auctionStartTime) {
       const startRate = marketRate * this.config.auctionStartRateMultiplier;
-      console.log(`  🚀 オークション前: ${startRate} (${this.config.auctionStartRateMultiplier}x)`);
+      console.log(`  🚀 Before Auction: ${startRate} (${this.config.auctionStartRateMultiplier}x)`);
       return startRate;
     }
     
@@ -125,17 +125,17 @@ export class DutchAuction {
     const currentRate = (marketRate * this.config.auctionStartRateMultiplier) - decreaseAmount;
     const finalRate = Math.max(currentRate, marketRate * this.config.minimumReturnRate);
     
-    console.log(`  ⏳ 経過時間: ${Math.floor(auctionElapsed)}秒`);
-    console.log(`  📉 減少量: ${decreaseAmount}`);
-    console.log(`  💸 現在レート: ${finalRate}`);
-    console.log(`  🔻 最小レート: ${marketRate * this.config.minimumReturnRate}`);
+    console.log(`  ⏳ Elapsed Time: ${Math.floor(auctionElapsed)} seconds`);
+    console.log(`  📉 Decrease Amount: ${decreaseAmount}`);
+    console.log(`  💸 Current Rate: ${finalRate}`);
+    console.log(`  🔻 Minimum Rate: ${marketRate * this.config.minimumReturnRate}`);
     
     return finalRate;
   }
   
   isProfitableForResolver(currentRate: number, resolverCost: number): boolean {
     const profitable = currentRate >= resolverCost;
-    console.log(`💰 リゾルバー収益性チェック: ${currentRate} >= ${resolverCost} = ${profitable}`);
+    console.log(`💰 Resolver Profitability Check: ${currentRate} >= ${resolverCost} = ${profitable}`);
     return profitable;
   }
   
@@ -167,9 +167,9 @@ export class FinalityLockManager {
   async waitForChainFinality(chainId: number, blockNumber: number): Promise<void> {
     const finalityBlocks = chainId === 1 ? this.config.sourceChainFinality : this.config.destinationChainFinality;
     
-    console.log(`⏳ チェーン${chainId}のfinality待機中...`);
-    console.log(`📊 必要ブロック数: ${finalityBlocks}`);
-    console.log(`🎯 基準ブロック: ${blockNumber}`);
+    console.log(`⏳ Waiting for chain ${chainId} finality...`);
+    console.log(`📊 Required Blocks: ${finalityBlocks}`);
+    console.log(`🎯 Base Block: ${blockNumber}`);
     
     // Simulate finality waiting (in real implementation, check actual block numbers)
     let currentBlock = blockNumber;
@@ -183,10 +183,10 @@ export class FinalityLockManager {
       await new Promise(resolve => setTimeout(resolve, 1000));
       currentBlock += stepSize;
       const progress = Math.min(100, ((currentBlock - blockNumber) / finalityBlocks) * 100);
-      console.log(`📈 Finality進捗: ${currentBlock}/${targetBlock} (${progress.toFixed(1)}%)`);
+      console.log(`📈 Finality Progress: ${currentBlock}/${targetBlock} (${progress.toFixed(1)}%)`);
     }
     
-    console.log(`✅ チェーン${chainId}のfinality確認完了`);
+    console.log(`✅ Chain ${chainId} finality confirmation completed`);
   }
   
   async shareSecretConditionally(
@@ -194,20 +194,20 @@ export class FinalityLockManager {
     secret: string, 
     resolverAddress: string
   ): Promise<void> {
-    console.log(`🔐 条件付きシークレット共有開始: ${orderId}`);
+    console.log(`🔐 Conditional Secret Sharing Started: ${orderId}`);
     
-    // ホワイトリストチェック
+    // Whitelist check
     if (this.config.whitelistedResolvers.length > 0 && !this.config.whitelistedResolvers.includes(resolverAddress)) {
-      throw new Error(`リゾルバー${resolverAddress}はホワイトリストに登録されていません`);
+      throw new Error(`Resolver ${resolverAddress} is not in the whitelist`);
     }
     
-    // シークレット共有遅延
-    console.log(`⏳ シークレット共有遅延待機中... (${this.config.secretSharingDelay}秒)`);
-    await new Promise(resolve => setTimeout(resolve, Math.min(this.config.secretSharingDelay * 100, 3000))); // 実際のテストでは短縮
+    // Secret sharing delay
+    console.log(`⏳ Waiting for secret sharing delay... (${this.config.secretSharingDelay} seconds)`);
+    await new Promise(resolve => setTimeout(resolve, Math.min(this.config.secretSharingDelay * 100, 3000))); // Shortened for actual testing
     
-    console.log(`🔑 シークレットをリゾルバー${resolverAddress}と共有完了`);
-    console.log(`  📝 オーダーID: ${orderId}`);
-    console.log(`  🔐 シークレット: ${secret.slice(0, 10)}...`);
+    console.log(`🔑 Secret shared with resolver ${resolverAddress} completed`);
+    console.log(`  📝 Order ID: ${orderId}`);
+    console.log(`  🔐 Secret: ${secret.slice(0, 10)}...`);
   }
   
   isResolverWhitelisted(resolverAddress: string): boolean {
@@ -237,11 +237,11 @@ export class SafetyDepositManager {
     const calculatedAmount = (escrowAmount * BigInt(Math.floor(this.config.rate * 1000))) / 1000n;
     const finalAmount = calculatedAmount > this.config.minAmount ? calculatedAmount : this.config.minAmount;
     
-    console.log(`🛡️ Safety Deposit計算:`);
-    console.log(`  💰 エスクロー金額: ${this.config.chain === 'ethereum' ? formatEther(escrowAmount) + ' ETH' : escrowAmount.toString() + ' SUI'}`);
-    console.log(`  📊 レート: ${this.config.rate * 100}%`);
-    console.log(`  💸 計算額: ${this.config.chain === 'ethereum' ? formatEther(calculatedAmount) + ' ETH' : calculatedAmount.toString() + ' SUI'}`);
-    console.log(`  🔒 最終Safety Deposit: ${this.config.chain === 'ethereum' ? formatEther(finalAmount) + ' ETH' : finalAmount.toString() + ' SUI'}`);
+    console.log(`🛡️ Safety Deposit Calculation:`);
+    console.log(`  💰 Escrow Amount: ${this.config.chain === 'ethereum' ? formatEther(escrowAmount) + ' ETH' : escrowAmount.toString() + ' SUI'}`);
+    console.log(`  📊 Rate: ${this.config.rate * 100}%`);
+    console.log(`  💸 Calculated Amount: ${this.config.chain === 'ethereum' ? formatEther(calculatedAmount) + ' ETH' : calculatedAmount.toString() + ' SUI'}`);
+    console.log(`  🔒 Final Safety Deposit: ${this.config.chain === 'ethereum' ? formatEther(finalAmount) + ' ETH' : finalAmount.toString() + ' SUI'}`);
     
     return finalAmount;
   }
@@ -253,11 +253,11 @@ export class SafetyDepositManager {
     const safetyDeposit = this.calculateSafetyDeposit(amount);
     const totalAmount = amount + safetyDeposit;
     
-    console.log(`💰 Safety Deposit付きエスクロー作成:`);
-    console.log(`  💸 基本金額: ${this.config.chain === 'ethereum' ? formatEther(amount) + ' ETH' : amount.toString() + ' SUI'}`);
+    console.log(`💰 Creating Escrow with Safety Deposit:`);
+    console.log(`  💸 Base Amount: ${this.config.chain === 'ethereum' ? formatEther(amount) + ' ETH' : amount.toString() + ' SUI'}`);
     console.log(`  🛡️ Safety Deposit: ${this.config.chain === 'ethereum' ? formatEther(safetyDeposit) + ' ETH' : safetyDeposit.toString() + ' SUI'}`);
-    console.log(`  📊 総額: ${this.config.chain === 'ethereum' ? formatEther(totalAmount) + ' ETH' : totalAmount.toString() + ' SUI'}`);
-    console.log(`  👤 リゾルバー: ${resolver}`);
+    console.log(`  📊 Total Amount: ${this.config.chain === 'ethereum' ? formatEther(totalAmount) + ' ETH' : totalAmount.toString() + ' SUI'}`);
+    console.log(`  👤 Resolver: ${resolver}`);
     
     return { totalAmount, safetyDeposit };
   }
@@ -267,15 +267,15 @@ export class SafetyDepositManager {
     resolver: string,
     safetyDeposit: bigint
   ): Promise<void> {
-    console.log(`💸 Safety Deposit引き出し実行:`);
-    console.log(`  📦 エスクローID: ${escrowId}`);
-    console.log(`  👤 実行者: ${resolver}`);
-    console.log(`  💰 インセンティブ: ${this.config.chain === 'ethereum' ? formatEther(safetyDeposit) + ' ETH' : safetyDeposit.toString() + ' SUI'}`);
+    console.log(`💸 Executing Safety Deposit Withdrawal:`);
+    console.log(`  📦 Escrow ID: ${escrowId}`);
+    console.log(`  👤 Executor: ${resolver}`);
+    console.log(`  💰 Incentive: ${this.config.chain === 'ethereum' ? formatEther(safetyDeposit) + ' ETH' : safetyDeposit.toString() + ' SUI'}`);
     
     // Simulate withdrawal execution
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    console.log(`✅ Safety Deposit ${this.config.chain === 'ethereum' ? formatEther(safetyDeposit) + ' ETH' : safetyDeposit.toString() + ' SUI'}をリゾルバー${resolver}に支払い完了`);
+    console.log(`✅ Safety Deposit ${this.config.chain === 'ethereum' ? formatEther(safetyDeposit) + ' ETH' : safetyDeposit.toString() + ' SUI'} payment to resolver ${resolver} completed`);
   }
 }
 
@@ -295,7 +295,7 @@ export class MerkleTreeSecretManager {
   generateMerkleTreeSecrets(orderAmount: bigint): MerkleTreeSecrets {
     const secrets: string[] = [];
     
-    // N+1個のシークレットを生成（N = セグメント数）
+    // Generate N+1 secrets (N = number of segments)
     for (let i = 0; i <= this.segments; i++) {
       let secret: string;
       do {
@@ -310,12 +310,12 @@ export class MerkleTreeSecretManager {
     
     const merkleRoot = this.calculateMerkleRoot(secrets);
     
-    console.log(`🌳 Merkle Tree生成完了:`);
-    console.log(`  📊 セグメント数: ${this.segments}`);
-    console.log(`  🌿 シークレット数: ${secrets.length}`);
-    console.log(`  📏 ツリー深度: ${this.treeDepth}`);
+    console.log(`🌳 Merkle Tree Generation Completed:`);
+    console.log(`  📊 Number of Segments: ${this.segments}`);
+    console.log(`  🌿 Number of Secrets: ${secrets.length}`);
+    console.log(`  📏 Tree Depth: ${this.treeDepth}`);
     console.log(`  🔑 Merkle Root: ${merkleRoot}`);
-    console.log(`  🔒 再利用防止: ${this.secretReusePreventionEnabled ? '有効' : '無効'}`);
+    console.log(`  🔒 Reuse Prevention: ${this.secretReusePreventionEnabled ? 'Enabled' : 'Disabled'}`);
     
     return {
       secrets,
@@ -329,23 +329,23 @@ export class MerkleTreeSecretManager {
     const segmentIndex = Math.floor(fillPercentage * this.segments / 100);
     const actualIndex = Math.min(segmentIndex, secrets.length - 1);
     
-    console.log(`🔍 部分フィル用シークレット取得:`);
-    console.log(`  📊 フィル率: ${fillPercentage}%`);
-    console.log(`  🎯 セグメントインデックス: ${actualIndex}/${secrets.length - 1}`);
+    console.log(`🔍 Getting Secret for Partial Fill:`);
+    console.log(`  📊 Fill Percentage: ${fillPercentage}%`);
+    console.log(`  🎯 Segment Index: ${actualIndex}/${secrets.length - 1}`);
     
     return secrets[actualIndex];
   }
   
   verifySecretInTree(secret: string, merkleRoot: string, proof: string[]): boolean {
-    // 簡略化されたMerkle proof検証
-    console.log(`🔍 Merkle Proof検証:`);
-    console.log(`  🔐 シークレット: ${secret.slice(0, 10)}...`);
+    // Simplified Merkle proof verification
+    console.log(`🔍 Merkle Proof Verification:`);
+    console.log(`  🔐 Secret: ${secret.slice(0, 10)}...`);
     console.log(`  🌳 Merkle Root: ${merkleRoot.slice(0, 10)}...`);
-    console.log(`  📜 Proof長: ${proof.length}`);
+    console.log(`  📜 Proof Length: ${proof.length}`);
     
-    // 実際の実装では完全なMerkle proof検証を行う
-    const isValid = proof.length > 0; // 簡略化
-    console.log(`  ✅ 検証結果: ${isValid ? '有効' : '無効'}`);
+    // In actual implementation, perform complete Merkle proof verification
+    const isValid = proof.length > 0; // Simplified
+    console.log(`  ✅ Verification Result: ${isValid ? 'Valid' : 'Invalid'}`);
     
     return isValid;
   }
@@ -357,7 +357,7 @@ export class MerkleTreeSecretManager {
   }
   
   private calculateMerkleRoot(secrets: string[]): string {
-    // 簡略化されたMerkle root計算
+    // Simplified Merkle root calculation
     const leaves = secrets.map(secret => keccak256(secret as `0x${string}`));
     return this.buildMerkleTree(leaves);
   }
@@ -398,37 +398,37 @@ export class FusionRelayerService {
     this.orders.set(order.id, order);
     
     if (!this.isEnabled) {
-      console.log(`📤 シンプルモード: オーダー${order.id}を全リゾルバーと共有`);
+      console.log(`📤 Simple Mode: Sharing order ${order.id} with all resolvers`);
       return;
     }
     
-    console.log(`📤 リレイヤーサービス: オーダー${order.id}をブロードキャスト中...`);
-    console.log(`  🌐 ソースチェーン: ${order.sourceChain}`);
-    console.log(`  🎯 デスティネーションチェーン: ${order.destinationChain}`);
-    console.log(`  💰 ソース金額: ${order.sourceAmount.toString()}`);
-    console.log(`  💸 デスティネーション金額: ${order.destinationAmount.toString()}`);
-    console.log(`  👥 リゾルバー数: ${this.resolvers.length}`);
+    console.log(`📤 Relayer Service: Broadcasting order ${order.id}...`);
+    console.log(`  🌐 Source Chain: ${order.sourceChain}`);
+    console.log(`  🎯 Destination Chain: ${order.destinationChain}`);
+    console.log(`  💰 Source Amount: ${order.sourceAmount.toString()}`);
+    console.log(`  �� Destination Amount: ${order.destinationAmount.toString()}`);
+    console.log(`  👥 Number of Resolvers: ${this.resolvers.length}`);
     
-    // 全リゾルバーにオーダーをブロードキャスト
+    // Broadcast order to all resolvers
     for (const resolver of this.resolvers) {
       await this.notifyResolver(resolver, order);
     }
     
-    // Dutch auction開始
+    // Start Dutch auction
     await this.startDutchAuction(order.id);
   }
   
   async startDutchAuction(orderId: string): Promise<void> {
     const order = this.orders.get(orderId);
     if (!order) {
-      console.error(`❌ オーダー${orderId}が見つかりません`);
+      console.error(`❌ Order ${orderId} not found`);
       return;
     }
     
-    console.log(`🏁 オーダー${orderId}のDutch auction開始`);
+    console.log(`🏁 Starting Dutch auction for order ${orderId}`);
     order.status = 'auction';
     
-    // オークション監視開始
+    // Start auction monitoring
     if (this.isEnabled) {
       this.monitorAuction(orderId);
     }
@@ -441,15 +441,15 @@ export class FusionRelayerService {
   ): Promise<void> {
     const order = this.orders.get(orderId);
     if (!order) {
-      console.error(`❌ オーダー${orderId}が見つかりません`);
+      console.error(`❌ Order ${orderId} not found`);
       return;
     }
     
-    console.log(`🔑 オーダー${orderId}のシークレット共有条件確認: ${condition}`);
+    console.log(`🔑 Checking secret sharing condition for order ${orderId}: ${condition}`);
     
     if (condition === 'finality_confirmed') {
-      // Finality確認後にシークレット共有
-      console.log(`⏳ Finality確認待機中...`);
+      // Share secret after finality confirmation
+      console.log(`⏳ Waiting for finality confirmation...`);
       await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate finality wait
       await this.shareSecretWithResolvers(orderId, secret);
     }
@@ -458,7 +458,7 @@ export class FusionRelayerService {
   private async notifyResolver(resolver: string, order: FusionOrder): Promise<void> {
     if (!this.notificationEnabled) return;
     
-    console.log(`📞 リゾルバー${resolver}にオーダー${order.id}を通知`);
+    console.log(`📞 Notifying resolver ${resolver} about order ${order.id}`);
     
     // Simulate notification
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -472,20 +472,20 @@ export class FusionRelayerService {
     let monitoringRounds = 0;
     const maxRounds = 5; // Testing limitation
     
-    console.log(`👁️ オーダー${orderId}のオークション監視開始`);
+    console.log(`👁️ Starting auction monitoring for order ${orderId}`);
     
-    // オークション監視ループ
+    // Auction monitoring loop
     const interval = setInterval(async () => {
       monitoringRounds++;
       const currentRate = auction.calculateCurrentRate(order.createdAt, 1.0);
       
-      console.log(`📊 オークション監視 (${monitoringRounds}/${maxRounds}):`);
-      console.log(`  💰 現在レート: ${currentRate}`);
+      console.log(`📊 Auction Monitoring (${monitoringRounds}/${maxRounds}):`);
+      console.log(`  💰 Current Rate: ${currentRate}`);
       
-      // リゾルバーが利益を得られるかチェック
+      // Check if resolver can profit
       for (const resolver of this.resolvers) {
         if (auction.isProfitableForResolver(currentRate, 0.9)) {
-          console.log(`💰 リゾルバー${resolver}がオーダー${orderId}を実行可能`);
+          console.log(`💰 Resolver ${resolver} can execute order ${orderId}`);
           await this.executeOrder(orderId, resolver);
           clearInterval(interval);
           return;
@@ -494,7 +494,7 @@ export class FusionRelayerService {
       
       // Testing limitation
       if (monitoringRounds >= maxRounds) {
-        console.log(`⏰ オークション監視終了 (テスト制限)`);
+        console.log(`⏰ Auction monitoring ended (test limitation)`);
         clearInterval(interval);
       }
     }, Math.min(this.broadcastInterval, 2000)); // Faster for testing
@@ -504,27 +504,27 @@ export class FusionRelayerService {
     const order = this.orders.get(orderId);
     if (!order) return;
     
-    console.log(`⚡ オーダー実行:`);
-    console.log(`  📦 オーダーID: ${orderId}`);
-    console.log(`  👤 実行リゾルバー: ${resolver}`);
-    console.log(`  💰 実行金額: ${order.sourceAmount.toString()}`);
+    console.log(`⚡ Executing Order:`);
+    console.log(`  📦 Order ID: ${orderId}`);
+    console.log(`  👤 Executing Resolver: ${resolver}`);
+    console.log(`  💰 Execution Amount: ${order.sourceAmount.toString()}`);
     
     order.status = 'filled';
     
     // Simulate order execution
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    console.log(`✅ オーダー${orderId}実行完了`);
+    console.log(`✅ Order ${orderId} execution completed`);
   }
   
   private async shareSecretWithResolvers(orderId: string, secret: string): Promise<void> {
-    console.log(`🔐 全リゾルバーとシークレット共有:`);
-    console.log(`  📦 オーダーID: ${orderId}`);
-    console.log(`  🔑 シークレット: ${secret.slice(0, 10)}...`);
-    console.log(`  👥 共有先: ${this.resolvers.length}人のリゾルバー`);
+    console.log(`🔐 Sharing Secret with All Resolvers:`);
+    console.log(`  📦 Order ID: ${orderId}`);
+    console.log(`  🔑 Secret: ${secret.slice(0, 10)}...`);
+    console.log(`  👥 Recipients: ${this.resolvers.length} resolvers`);
     
     for (const resolver of this.resolvers) {
-      console.log(`  📤 ${resolver}: 共有完了`);
+      console.log(`  📤 ${resolver}: Sharing completed`);
     }
   }
   
@@ -554,7 +554,7 @@ export class GasPriceAdjustmentManager {
     chainId: number
   ): Promise<number> {
     if (!this.config.enabled) {
-      console.log(`⛽ Gas Price Adjustment無効 - 元価格維持: ${originalPrice}`);
+      console.log(`⛽ Gas Price Adjustment Disabled - Maintaining Original Price: ${originalPrice}`);
       return originalPrice;
     }
     
@@ -562,11 +562,11 @@ export class GasPriceAdjustmentManager {
     const chainKey = chainId.toString();
     const historicalPrices = this.historicalGasPrices.get(chainKey) || [];
     
-    // 履歴を更新
+    // Update history
     this.updateHistoricalPrices(chainId, currentBaseFee);
     
     if (historicalPrices.length === 0) {
-      console.log(`⛽ Gas Price Adjustment: 履歴不足 - 元価格維持: ${originalPrice}`);
+      console.log(`⛽ Gas Price Adjustment: Insufficient History - Maintaining Original Price: ${originalPrice}`);
       return originalPrice;
     }
     
@@ -574,19 +574,19 @@ export class GasPriceAdjustmentManager {
     const gasVolatility = this.calculateGasVolatility(currentBaseFee, averageHistoricalPrice);
     
     console.log(`⛽ Gas Price Adjustment:`);
-    console.log(`  📊 チェーンID: ${chainId}`);
-    console.log(`  ⛽ 現在のBase Fee: ${formatGwei(currentBaseFee)} Gwei`);
-    console.log(`  📈 平均Base Fee: ${formatGwei(averageHistoricalPrice)} Gwei`);
-    console.log(`  📉 変動率: ${(gasVolatility * 100).toFixed(2)}%`);
-    console.log(`  🎯 変動閾値: ${(this.config.volatilityThreshold * 100).toFixed(2)}%`);
+    console.log(`  📊 Chain ID: ${chainId}`);
+    console.log(`  ⛽ Current Base Fee: ${formatGwei(currentBaseFee)} Gwei`);
+    console.log(`  📈 Average Base Fee: ${formatGwei(averageHistoricalPrice)} Gwei`);
+    console.log(`  📉 Volatility Rate: ${(gasVolatility * 100).toFixed(2)}%`);
+    console.log(`  🎯 Volatility Threshold: ${(this.config.volatilityThreshold * 100).toFixed(2)}%`);
     
     if (Math.abs(gasVolatility) > this.config.volatilityThreshold) {
       const adjustedPrice = originalPrice * (1 + gasVolatility * this.config.adjustmentFactor);
-      console.log(`🔄 価格調整実行: ${originalPrice} → ${adjustedPrice.toFixed(6)} (${this.config.adjustmentFactor}x調整)`);
+      console.log(`🔄 Price Adjustment Executed: ${originalPrice} → ${adjustedPrice.toFixed(6)} (${this.config.adjustmentFactor}x adjustment)`);
       return adjustedPrice;
     }
     
-    console.log(`✅ 価格調整不要: ${originalPrice}`);
+    console.log(`✅ Price Adjustment Not Required: ${originalPrice}`);
     return originalPrice;
   }
   
@@ -600,10 +600,10 @@ export class GasPriceAdjustmentManager {
     
     const shouldExecute = adjustedPrice >= executionThreshold;
     
-    console.log(`🤔 オーダー実行判定:`);
-    console.log(`  💰 調整後価格: ${adjustedPrice.toFixed(6)}`);
-    console.log(`  🎯 実行閾値: ${executionThreshold.toFixed(6)}`);
-    console.log(`  ✅ 実行可否: ${shouldExecute ? '実行可能' : '実行不可'}`);
+    console.log(`🤔 Order Execution Decision:`);
+    console.log(`  💰 Adjusted Price: ${adjustedPrice.toFixed(6)}`);
+    console.log(`  🎯 Execution Threshold: ${executionThreshold.toFixed(6)}`);
+    console.log(`  ✅ Execution Possible: ${shouldExecute ? 'Yes' : 'No'}`);
     
     return shouldExecute;
   }
@@ -611,7 +611,7 @@ export class GasPriceAdjustmentManager {
   private async getCurrentBaseFee(chainId: number): Promise<bigint> {
     // Simulate current base fee (in real implementation, fetch from RPC)
     const simulatedBaseFee = BigInt(Math.floor(Math.random() * 50 + 20)) * BigInt(1e9); // 20-70 Gwei
-    console.log(`📊 シミュレートされたBase Fee: ${formatGwei(simulatedBaseFee)} Gwei`);
+    console.log(`📊 Simulated Base Fee: ${formatGwei(simulatedBaseFee)} Gwei`);
     return simulatedBaseFee;
   }
   
@@ -670,41 +670,41 @@ export class SecurityManager {
       ...config
     };
     
-    console.log(`🛡️ Security Manager初期化:`);
-    console.log(`  🔒 Reentrancy Protection: ${this.config.reentrancyProtection ? '有効' : '無効'}`);
-    console.log(`  👥 ホワイトリストリゾルバー: ${this.config.accessControl.whitelistedResolvers.length}個`);
-    console.log(`  👑 管理者: ${this.config.accessControl.adminAddresses.length}個`);
-    console.log(`  🚨 緊急停止: ${this.config.emergencyPause ? '有効' : '無効'}`);
-    console.log(`  🔄 アップグレード可能: ${this.config.upgradeability ? '有効' : '無効'}`);
+    console.log(`🛡️ Security Manager Initialization:`);
+    console.log(`  🔒 Reentrancy Protection: ${this.config.reentrancyProtection ? 'Enabled' : 'Disabled'}`);
+    console.log(`  👥 Whitelisted Resolvers: ${this.config.accessControl.whitelistedResolvers.length} addresses`);
+    console.log(`  👑 Administrators: ${this.config.accessControl.adminAddresses.length} addresses`);
+    console.log(`  🚨 Emergency Pause: ${this.config.emergencyPause ? 'Enabled' : 'Disabled'}`);
+    console.log(`  🔄 Upgradeability: ${this.config.upgradeability ? 'Enabled' : 'Disabled'}`);
   }
   
   async checkReentrancyProtection(txHash: string): Promise<boolean> {
     if (!this.config.reentrancyProtection) {
-      console.log(`🔓 Reentrancy Protection無効 - チェックスキップ`);
+      console.log(`🔓 Reentrancy Protection Disabled - Skipping Check`);
       return true;
     }
     
     if (this.reentrancyGuard.has(txHash)) {
-      console.error(`🚫 Reentrancy攻撃検出: ${txHash}`);
+      console.error(`🚫 Reentrancy Attack Detected: ${txHash}`);
       return false;
     }
     
-    console.log(`✅ Reentrancy Protection: ${txHash} - 安全`);
+    console.log(`✅ Reentrancy Protection: ${txHash} - Safe`);
     this.reentrancyGuard.add(txHash);
     
     // Clean up after 60 seconds
     setTimeout(() => {
       this.reentrancyGuard.delete(txHash);
-      console.log(`🧹 Reentrancy Guard クリーンアップ: ${txHash}`);
+      console.log(`🧹 Reentrancy Guard Cleanup: ${txHash}`);
     }, 60000);
     
     return true;
   }
   
   async checkAccessControl(user: string, action: string): Promise<boolean> {
-    console.log(`🔐 アクセス制御チェック:`);
-    console.log(`  👤 ユーザー: ${user}`);
-    console.log(`  🎯 アクション: ${action}`);
+    console.log(`🔐 Access Control Check:`);
+    console.log(`  👤 User: ${user}`);
+    console.log(`  🎯 Action: ${action}`);
     
     const { adminAddresses, whitelistedResolvers, pauseGuardian } = this.config.accessControl;
     
@@ -713,18 +713,18 @@ export class SecurityManager {
     switch (action) {
       case 'admin':
         hasAccess = adminAddresses.includes(user);
-        console.log(`  👑 管理者権限: ${hasAccess ? '許可' : '拒否'}`);
+        console.log(`  👑 Admin Permission: ${hasAccess ? 'Granted' : 'Denied'}`);
         break;
       case 'resolver':
         hasAccess = whitelistedResolvers.length === 0 || whitelistedResolvers.includes(user);
-        console.log(`  🔧 リゾルバー権限: ${hasAccess ? '許可' : '拒否'}`);
+        console.log(`  🔧 Resolver Permission: ${hasAccess ? 'Granted' : 'Denied'}`);
         break;
       case 'pause':
         hasAccess = user === pauseGuardian || adminAddresses.includes(user);
-        console.log(`  🚨 一時停止権限: ${hasAccess ? '許可' : '拒否'}`);
+        console.log(`  🚨 Pause Permission: ${hasAccess ? 'Granted' : 'Denied'}`);
         break;
       default:
-        console.log(`  ❓ 不明なアクション: 拒否`);
+        console.log(`  ❓ Unknown Action: Denied`);
         hasAccess = false;
     }
     
@@ -733,29 +733,29 @@ export class SecurityManager {
   
   async emergencyPause(): Promise<void> {
     if (!this.config.emergencyPause) {
-      console.log(`🚨 緊急一時停止機能が無効です`);
+      console.log(`🚨 Emergency pause functionality is disabled`);
       return;
     }
     
-    console.log(`🚨 緊急一時停止実行中...`);
+    console.log(`🚨 Executing Emergency Pause...`);
     this.isPaused = true;
     
-    // 全ての進行中のトランザクションを停止
+    // Stop all ongoing transactions
     await this.stopAllTransactions();
     
-    console.log(`🛑 システム緊急一時停止完了`);
+    console.log(`🛑 System Emergency Pause Completed`);
   }
   
   async emergencyResume(): Promise<void> {
     if (!this.config.emergencyPause) {
-      console.log(`✅ 緊急一時停止機能が無効のため、再開不要です`);
+      console.log(`✅ Emergency pause functionality is disabled, no resume needed`);
       return;
     }
     
-    console.log(`🔄 緊急一時停止解除中...`);
+    console.log(`🔄 Lifting Emergency Pause...`);
     this.isPaused = false;
     
-    console.log(`✅ システム正常稼働再開`);
+    console.log(`✅ System Normal Operation Resumed`);
   }
   
   isPausedState(): boolean {
@@ -763,40 +763,40 @@ export class SecurityManager {
   }
   
   async performSecurityCheck(txHash: string, user: string, action: string): Promise<boolean> {
-    console.log(`🛡️ 総合セキュリティチェック開始:`);
+    console.log(`🛡️ Comprehensive Security Check Started:`);
     console.log(`  📦 TX Hash: ${txHash}`);
     console.log(`  👤 User: ${user}`);
     console.log(`  🎯 Action: ${action}`);
     
-    // 1. 一時停止チェック
+    // 1. Pause check
     if (this.isPaused) {
-      console.error(`🛑 システムが一時停止中です`);
+      console.error(`🛑 System is currently paused`);
       return false;
     }
     
-    // 2. Reentrancy チェック
+    // 2. Reentrancy check
     const reentrancySafe = await this.checkReentrancyProtection(txHash);
     if (!reentrancySafe) {
       return false;
     }
     
-    // 3. アクセス制御チェック
+    // 3. Access control check
     const hasAccess = await this.checkAccessControl(user, action);
     if (!hasAccess) {
       return false;
     }
     
-    console.log(`✅ 総合セキュリティチェック通過`);
+    console.log(`✅ Comprehensive Security Check Passed`);
     return true;
   }
   
   private async stopAllTransactions(): Promise<void> {
-    console.log(`⏹️ 全トランザクション停止処理中...`);
+    console.log(`⏹️ Stopping All Transactions...`);
     
     // Simulate stopping all transactions
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    console.log(`✅ 全トランザクション停止完了`);
+    console.log(`✅ All Transactions Stopped`);
   }
 }
 

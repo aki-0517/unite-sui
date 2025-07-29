@@ -32,73 +32,73 @@ function getOptionalEnvVar(name: string, defaultValue: string): string {
   return process.env[name] || defaultValue;
 }
 
-// 定数定義（環境変数から取得）
+// Constants definition (from environment variables)
 const ETH_TO_SUI_RATE = parseFloat(getOptionalEnvVar('ETH_TO_SUI_RATE', '0.001')); // 1 SUI = 0.001 ETH
 const SUI_TO_ETH_RATE = parseFloat(getOptionalEnvVar('SUI_TO_ETH_RATE', '1000')); // 1 ETH = 1000 SUI
-const TIMELOCK_DURATION = parseInt(getOptionalEnvVar('TIMELOCK_DURATION', '3600')); // 1時間（秒）
-const SUI_TIMELOCK_DURATION = parseInt(getOptionalEnvVar('SUI_TIMELOCK_DURATION', '3600000')); // 1時間（ミリ秒）
+const TIMELOCK_DURATION = parseInt(getOptionalEnvVar('TIMELOCK_DURATION', '3600')); // 1 hour (seconds)
+const SUI_TIMELOCK_DURATION = parseInt(getOptionalEnvVar('SUI_TIMELOCK_DURATION', '3600000')); // 1 hour (milliseconds)
 
-// コントラクトアドレス（環境変数から取得）
+// Contract addresses (from environment variables)
 const ETH_ESCROW_ADDRESS = getRequiredEnvVar('ETH_ESCROW_ADDRESS');
 const SUI_ESCROW_PACKAGE_ID = getRequiredEnvVar('SUI_ESCROW_PACKAGE_ID');
 const SUI_USED_SECRETS_REGISTRY_ID = getRequiredEnvVar('SUI_USED_SECRETS_REGISTRY_ID');
 
-// 秘密鍵設定（環境変数から取得）
+// Private key settings (from environment variables)
 const SEPOLIA_USER_PRIVATE_KEY = getRequiredEnvVar('SEPOLIA_USER_PRIVATE_KEY');
 const SUI_USER_PRIVATE_KEY = getRequiredEnvVar('SUI_USER_PRIVATE_KEY');
 
-// Resolver設定（2人）
+// Resolver settings (2 resolvers)
 const RESOLVER2_PRIVATE_KEY = getRequiredEnvVar('RESOLVER2_PRIVATE_KEY');
 const RESOLVER3_PRIVATE_KEY = getRequiredEnvVar('RESOLVER3_PRIVATE_KEY');
 
 const RESOLVER2_ADDRESS = getRequiredEnvVar('RESOLVER2_ADDRESS');
 const RESOLVER3_ADDRESS = getRequiredEnvVar('RESOLVER3_ADDRESS');
 
-// Sui Resolver設定
+// Sui Resolver settings
 const SUI_RESOLVER2_PRIVATE_KEY = getRequiredEnvVar('SUI_RESOLVER2_PRIVATE_KEY');
 const SUI_RESOLVER3_PRIVATE_KEY = getRequiredEnvVar('SUI_RESOLVER3_PRIVATE_KEY');
 
 const SUI_RESOLVER2_ADDRESS = getRequiredEnvVar('SUI_RESOLVER2_ADDRESS');
 const SUI_RESOLVER3_ADDRESS = getRequiredEnvVar('SUI_RESOLVER3_ADDRESS');
 
-// Suiアカウント設定（新しいキーペアを生成）
+// Sui account settings (generate new keypair)
 const newSuiKeypair = new Ed25519Keypair();
 const SUI_ACCOUNT_ADDRESS = newSuiKeypair.getPublicKey().toSuiAddress();
 
-console.log('🔧 新しいSuiアカウントを生成しました:');
-console.log(`📧 アドレス: ${SUI_ACCOUNT_ADDRESS}`);
-console.log('💡 このアドレスでフォーセットからコインを取得してください:');
+console.log('🔧 Generated new Sui account:');
+console.log(`📧 Address: ${SUI_ACCOUNT_ADDRESS}`);
+console.log('💡 Please get coins from the faucet at this address:');
 console.log('   🌐 https://suiexplorer.com/faucet');
 
-// 高速 Ethereum RPC エンドポイントのリスト（フォールバック用）
+// High-speed Ethereum RPC endpoint list (for fallback)
 const ETHEREUM_RPC_ENDPOINTS = [
   getOptionalEnvVar('ETHEREUM_RPC_URL', 'https://eth-sepolia.g.alchemy.com/v2/6NeLLzvcPysgTTGv3Hl5tQfpXrocO1xb'),
-  'https://ethereum-sepolia-rpc.publicnode.com', // PublicNode - 最高速かつ無料
-  'https://1rpc.io/sepolia', // 1RPC - プライバシー重視
-  'https://sepolia.drpc.org', // DRPC - 元のエンドポイント
-  'https://rpc2.sepolia.org', // Sepolia.org - バックアップ
+  'https://ethereum-sepolia-rpc.publicnode.com', // PublicNode - fastest and free
+  'https://1rpc.io/sepolia', // 1RPC - privacy focused
+  'https://sepolia.drpc.org', // DRPC - original endpoint
+  'https://rpc2.sepolia.org', // Sepolia.org - backup
 ];
 
-// 現在使用中のRPCインデックス
+// Currently used RPC index
 let currentRpcIndex = 0;
 
-// RPCフォールバック関数
+// RPC fallback function
 function getNextRpcUrl(): string {
   const url = ETHEREUM_RPC_ENDPOINTS[currentRpcIndex];
   if (currentRpcIndex > 0) {
-    console.log(`🔄 RPC切り替え: ${url}`);
+    console.log(`🔄 RPC switch: ${url}`);
   }
   currentRpcIndex = (currentRpcIndex + 1) % ETHEREUM_RPC_ENDPOINTS.length;
   return url;
 }
 
-// 最適化された Ethereum クライアント設定
+// Optimized Ethereum client settings
 const publicClient = createPublicClient({
   chain: sepolia,
   transport: http(getNextRpcUrl(), {
-    timeout: 20000, // 20秒に短縮
-    retryCount: 3, // リトライ回数を増加
-    retryDelay: 500 // リトライ間隔を短縮
+    timeout: 20000, // shortened to 20 seconds
+    retryCount: 3, // increased retry count
+    retryDelay: 500 // shortened retry interval
   }),
 });
 
@@ -106,7 +106,7 @@ const userAccount = privateKeyToAccount(SEPOLIA_USER_PRIVATE_KEY as `0x${string}
 const resolver2Account = privateKeyToAccount(RESOLVER2_PRIVATE_KEY as `0x${string}`);
 const resolver3Account = privateKeyToAccount(RESOLVER3_PRIVATE_KEY as `0x${string}`);
 
-// Raw Transaction用のWalletClient設定（ローカル署名用）
+// WalletClient settings for Raw Transaction (for local signing)
 const walletClient = createWalletClient({
   account: userAccount,
   chain: sepolia,
@@ -117,10 +117,10 @@ const walletClient = createWalletClient({
   }),
 });
 
-// 高速 Sui RPC エンドポイントのリスト
+// High-speed Sui RPC endpoint list
 const SUI_RPC_ENDPOINTS = [
-  getOptionalEnvVar('SUI_RPC_URL', 'https://fullnode.devnet.sui.io:443'), // Mysten Labs 公式
-  'https://rpc-devnet.suiscan.xyz:443', // Suiscan バックアップ
+  getOptionalEnvVar('SUI_RPC_URL', 'https://fullnode.devnet.sui.io:443'), // Mysten Labs official
+  'https://rpc-devnet.suiscan.xyz:443', // Suiscan backup
 ];
 
 let currentSuiRpcIndex = 0;
@@ -131,33 +131,33 @@ function getNextSuiRpcUrl(): string {
   return url;
 }
 
-// 最適化された Sui クライアント設定
+// Optimized Sui client settings
 const suiClient = new SuiClient({
   url: getNextSuiRpcUrl(),
 });
 
-// Sui キーペア設定
+// Sui keypair settings
 const suiKeypair = newSuiKeypair;
 
-// Sui Resolver キーペア設定
+// Sui Resolver keypair settings
 const suiResolver2Keypair = new Ed25519Keypair();
 const suiResolver3Keypair = new Ed25519Keypair();
 
-// アドレスを確認
+// Verify addresses
 const suiAddress = suiKeypair.getPublicKey().toSuiAddress();
 console.log('Sui Address:', suiAddress);
 console.log('Expected Address:', SUI_ACCOUNT_ADDRESS);
 console.log('Address Match:', suiAddress === SUI_ACCOUNT_ADDRESS);
 
 if (suiAddress !== SUI_ACCOUNT_ADDRESS) {
-  console.error('❌ アドレスが一致しません！');
-  console.error('期待されるアドレス:', SUI_ACCOUNT_ADDRESS);
-  console.error('実際のアドレス:', suiAddress);
-  console.error('秘密鍵から生成されたアドレスが期待されるアドレスと一致していません。');
-  console.error('秘密鍵が正しいか確認してください。');
+  console.error('❌ Addresses do not match!');
+  console.error('Expected address:', SUI_ACCOUNT_ADDRESS);
+  console.error('Actual address:', suiAddress);
+  console.error('The address generated from the private key does not match the expected address.');
+  console.error('Please verify that the private key is correct.');
 }
 
-// ユーティリティ関数
+// Utility functions
 function generateSecret(): string {
   return '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 256))
     .map(b => b.toString(16).padStart(2, '0'))
@@ -165,9 +165,9 @@ function generateSecret(): string {
 }
 
 function createHashLock(secret: string): string {
-  // Ethereumコントラクトと同じ方法でハッシュロックを生成
+  // Generate hash lock using the same method as Ethereum contract
   // keccak256(abi.encodePacked(secret))
-  // viemのkeccak256を使用してハッシュを計算
+  // Calculate hash using viem's keccak256
   const hash = keccak256(secret as `0x${string}`);
   return hash;
 }
@@ -177,7 +177,7 @@ function verifySecret(secret: string, hashLock: string): boolean {
   return calculatedHash === hashLock;
 }
 
-// Ethereum エスクローコントラクトのABI（完全版）
+// Ethereum escrow contract ABI (complete version)
 const ESCROW_ABI = [
   {
     "inputs": [
@@ -323,23 +323,23 @@ class BidirectionalSwapVerifier {
     console.log('🚀 BidirectionalSwapVerifier with 1inch Fusion+ features initialized');
   }
 
-  // Sui faucetからトークンを取得
+  // Get tokens from Sui faucet
   async requestSuiFromFaucet(address: string): Promise<void> {
     try {
-      console.log(`💰 Sui faucetからトークンをリクエスト中...`);
-      console.log(`📧 アドレス: ${address}`);
+      console.log(`💰 Requesting tokens from Sui faucet...`);
+      console.log(`📧 Address: ${address}`);
       
       await requestSuiFromFaucetV2({
         host: getFaucetHost('devnet'),
         recipient: address,
       });
       
-      console.log(`✅ Sui faucetからトークンを取得しました`);
+      console.log(`✅ Obtained tokens from Sui faucet`);
       
-      // 少し待機してトランザクションが処理されるのを待つ
+      // Wait a bit for the transaction to be processed
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // 取得後の残高を確認
+      // Check balance after obtaining
       const coins = await suiClient.getCoins({
         owner: address,
         coinType: '0x2::sui::SUI'
@@ -350,18 +350,18 @@ class BidirectionalSwapVerifier {
         totalBalance += BigInt(coin.balance);
       }
       
-      console.log(`💰 取得後の総残高: ${totalBalance}`);
+      console.log(`💰 Total balance after obtaining: ${totalBalance}`);
       
     } catch (error) {
-      console.error('❌ Sui faucetからのトークン取得に失敗:', error);
+      console.error('❌ Failed to get tokens from Sui faucet:', error);
       throw error;
     }
   }
 
-  // Suiアカウントの残高を確認し、不足している場合はfaucetから取得
+  // Check Sui account balance and get from faucet if insufficient
   async ensureSuiBalance(address: string, requiredAmount: bigint = BigInt(10000000000)): Promise<void> {
     try {
-      console.log(`🔍 Suiアカウント残高確認: ${address}`);
+      console.log(`🔍 Checking Sui account balance: ${address}`);
       
       const coins = await suiClient.getCoins({
         owner: address,
@@ -373,13 +373,13 @@ class BidirectionalSwapVerifier {
         totalBalance += BigInt(coin.balance);
       }
       
-      console.log(`💰 現在の総残高: ${totalBalance}`);
+      console.log(`💰 Current total balance: ${totalBalance}`);
       
       if (totalBalance < requiredAmount) {
-        console.log(`⚠️ 残高が不足しています。faucetからトークンを取得します...`);
+        console.log(`⚠️ Balance is insufficient. Getting tokens from faucet...`);
         await this.requestSuiFromFaucet(address);
         
-        // 取得後の残高を簡略化した方法で確認
+        // Check balance after obtaining using simplified method
         await new Promise(resolve => setTimeout(resolve, 500));
         const updatedCoins = await suiClient.getCoins({
           owner: address,
@@ -392,57 +392,57 @@ class BidirectionalSwapVerifier {
         }
         
         if (updatedBalance < requiredAmount) {
-          console.warn(`⚠️ 残高がまだ不足していますが続行します。必要: ${requiredAmount}, 現在: ${updatedBalance}`);
+          console.warn(`⚠️ Balance is still insufficient but continuing. Required: ${requiredAmount}, Current: ${updatedBalance}`);
         }
       } else {
-        console.log(`✅ 残高は十分です`);
+        console.log(`✅ Balance is sufficient`);
       }
       
     } catch (error) {
-      console.error('❌ Sui残高確認エラー:', error);
+      console.error('❌ Sui balance check error:', error);
       throw error;
     }
   }
 
-  // コントラクトの存在確認
+  // Contract existence verification
   async verifyContractExists(): Promise<boolean> {
     try {
-      console.log(`🔍 コントラクト存在確認中...`);
-      console.log(`📍 アドレス: ${this.ethEscrowAddress}`);
-      console.log(`🌐 ネットワーク: Sepolia Testnet`);
+      console.log(`🔍 Checking contract existence...`);
+      console.log(`📍 Address: ${this.ethEscrowAddress}`);
+      console.log(`🌐 Network: Sepolia Testnet`);
       
       const code = await publicClient.getBytecode({ address: this.ethEscrowAddress as `0x${string}` });
       const exists = code !== undefined && code !== '0x';
       
-      console.log(`📋 バイトコード: ${code ? code.slice(0, 66) + '...' : '0x'}`);
-      console.log(`🔍 コントラクト存在確認: ${exists ? '✅ 存在' : '❌ 存在しない'}`);
+      console.log(`📋 Bytecode: ${code ? code.slice(0, 66) + '...' : '0x'}`);
+      console.log(`🔍 Contract existence check: ${exists ? '✅ Exists' : '❌ Does not exist'}`);
       
       return exists;
     } catch (error) {
-      console.error('❌ コントラクト確認エラー:', error);
+      console.error('❌ Contract verification error:', error);
       return false;
     }
   }
 
-  // Suiアカウントの初期化
+  // Sui account initialization
   async initializeSuiAccount(): Promise<void> {
     try {
       const address = SUI_ACCOUNT_ADDRESS;
-      console.log(`🔧 Suiアカウント初期化: ${address}`);
+      console.log(`🔧 Sui account initialization: ${address}`);
       
-      // 残高を確認し、必要に応じてfaucetから取得
-      await this.ensureSuiBalance(address, BigInt(5000000000)); // 5 SUI - 必要最小限に調整
+      // Check balance and get from faucet if needed
+      await this.ensureSuiBalance(address, BigInt(5000000000)); // 5 SUI - adjusted to minimum required
       
-      console.log(`✅ Suiアカウント初期化完了`);
+      console.log(`✅ Sui account initialization completed`);
     } catch (error) {
-      console.error('❌ Suiアカウント初期化エラー:', error);
+      console.error('❌ Sui account initialization error:', error);
       throw error;
     }
   }
 
-  // Enhanced Ethereum -> Sui スワップの検証 (1inch Fusion+ integrated)
+  // Enhanced Ethereum -> Sui swap verification (1inch Fusion+ integrated)
   async verifyEnhancedEthToSuiSwap(ethAmount: bigint): Promise<SwapResult> {
-    console.log('🔍 Enhanced Ethereum -> Sui スワップ検証開始 (1inch Fusion+)...');
+    console.log('🔍 Starting Enhanced Ethereum -> Sui swap verification (1inch Fusion+)...');
     console.log('==================================================');
     
     try {
@@ -450,60 +450,60 @@ class BidirectionalSwapVerifier {
       const userAddress = userAccount.address;
 
       // 1. Security Check
-      console.log('\n🛡️ Step 1: セキュリティチェック');
+      console.log('\n🛡️ Step 1: Security Check');
       const securityPassed = await this.security.performSecurityCheck(txHash, userAddress, 'resolver');
       if (!securityPassed) {
-        throw new Error('セキュリティチェックに失敗しました');
+        throw new Error('Security check failed');
       }
 
       // 2. Create Fusion Order
-      console.log('\n📦 Step 2: Fusion Order作成');
+      console.log('\n📦 Step 2: Create Fusion Order');
       const order = await this.createFusionOrder(ethAmount, 'ETH', 'SUI');
       
       // 3. Share Order via Relayer
-      console.log('\n📤 Step 3: リレイヤーサービス経由でオーダー共有');
+      console.log('\n📤 Step 3: Share Order via Relayer Service');
       await this.relayer.shareOrder(order);
 
       // 4. Dutch Auction Processing
-      console.log('\n🏁 Step 4: Dutch Auction処理');
+      console.log('\n🏁 Step 4: Dutch Auction Processing');
       const currentRate = this.dutchAuction.calculateCurrentRate(order.createdAt, ETH_TO_SUI_RATE);
       
       // 5. Gas Price Adjustment
-      console.log('\n⛽ Step 5: Gas価格調整');
+      console.log('\n⛽ Step 5: Gas Price Adjustment');
       const adjustedRate = await this.gasAdjustment.adjustPriceForGasVolatility(currentRate, 1);
 
       // 6. Generate Secret and Hash Lock
-      console.log('\n🔑 Step 6: シークレットとハッシュロック生成');
+      console.log('\n🔑 Step 6: Generate Secret and Hash Lock');
       const secret = generateSecret();
       const hashLock = createHashLock(secret);
       const timeLock = Math.floor(Date.now() / 1000) + TIMELOCK_DURATION;
       const suiTimeLock = BigInt(Date.now() + SUI_TIMELOCK_DURATION);
       
-      console.log(`📝 シークレット生成: ${secret}`);
-      console.log(`🔒 ハッシュロック生成: ${hashLock}`);
-      console.log(`⏰ Ethereum タイムロック設定: ${timeLock}`);
-      console.log(`⏰ Sui タイムロック設定: ${suiTimeLock}`);
+      console.log(`📝 Secret generated: ${secret}`);
+      console.log(`🔒 Hash lock generated: ${hashLock}`);
+      console.log(`⏰ Ethereum timelock set: ${timeLock}`);
+      console.log(`⏰ Sui timelock set: ${suiTimeLock}`);
 
       // 7. Wait for Finality
-      console.log('\n⏳ Step 7: Finality待機');
+      console.log('\n⏳ Step 7: Wait for Finality');
       await this.finalityLock.waitForChainFinality(1, await this.getCurrentBlock());
 
       // 8. Create Ethereum Escrow with Safety Deposit
-      console.log('\n📦 Step 8: Safety Deposit付きEthereumエスクロー作成');
+      console.log('\n📦 Step 8: Create Ethereum Escrow with Safety Deposit');
       const { totalAmount: ethTotalAmount, safetyDeposit: ethSafetyDeposit } = 
         await this.ethSafetyDeposit.createEscrowWithSafetyDeposit(ethAmount, RESOLVER2_ADDRESS);
       
       const escrowId = await this.createEthEscrow(hashLock, BigInt(timeLock), ethTotalAmount);
-      console.log(`📦 Ethereum エスクロー作成: ${escrowId}`);
+      console.log(`📦 Ethereum escrow created: ${escrowId}`);
 
       // 9. Fill Ethereum Escrow
-      console.log('\n🔄 Step 9: Ethereumエスクロー フィル');
+      console.log('\n🔄 Step 9: Fill Ethereum Escrow');
       await this.finalityLock.shareSecretConditionally(escrowId, secret, RESOLVER2_ADDRESS);
       await this.fillEthEscrow(escrowId, ethAmount, secret);
-      console.log(`✅ Ethereum エスクロー フィル完了`);
+      console.log(`✅ Ethereum escrow fill completed`);
 
       // 10. Create and Fill Sui Escrow
-      console.log('\n🔄 Step 10: Suiエスクロー作成・フィル');
+      console.log('\n🔄 Step 10: Create and Fill Sui Escrow');
       const suiAmount = (ethAmount * BigInt(SUI_TO_ETH_RATE)) / BigInt(1e18);
       const minSuiAmount = BigInt(1000000000);
       const finalSuiAmount = suiAmount < minSuiAmount ? minSuiAmount : suiAmount;
@@ -511,21 +511,21 @@ class BidirectionalSwapVerifier {
       const { totalAmount: suiTotalAmount } = await this.suiSafetyDeposit.createEscrowWithSafetyDeposit(finalSuiAmount, SUI_RESOLVER2_ADDRESS);
       
       const suiEscrowId = await this.createSuiEscrow(hashLock, suiTimeLock, suiTotalAmount);
-      console.log(`📦 Sui エスクロー作成: ${suiEscrowId}`);
+      console.log(`📦 Sui escrow created: ${suiEscrowId}`);
       
       await this.finalityLock.shareSecretConditionally(suiEscrowId, secret, SUI_RESOLVER2_ADDRESS);
       await this.fillSuiEscrow(suiEscrowId, finalSuiAmount, secret, true);
-      console.log(`✅ Sui エスクロー フィル完了`);
+      console.log(`✅ Sui escrow fill completed`);
 
       // 11. Conditional Secret Sharing
-      console.log('\n🔑 Step 11: 条件付きシークレット共有');
+      console.log('\n🔑 Step 11: Conditional Secret Sharing');
       await this.relayer.shareSecretConditionally(
         order.id, 
         secret, 
         'finality_confirmed'
       );
 
-      console.log('\n🎉 Enhanced Ethereum -> Sui スワップ完了 (1inch Fusion+)!');
+      console.log('\n🎉 Enhanced Ethereum -> Sui swap completed (1inch Fusion+)!');
       console.log('==================================================');
       this.printSwapSummary('ETH → SUI', ethAmount, finalSuiAmount, order.id, escrowId);
 
@@ -537,7 +537,7 @@ class BidirectionalSwapVerifier {
       };
 
     } catch (error) {
-      console.error('❌ Enhanced Ethereum -> Sui スワップ検証失敗:', error);
+      console.error('❌ Enhanced Ethereum -> Sui swap verification failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -545,9 +545,9 @@ class BidirectionalSwapVerifier {
     }
   }
 
-  // Enhanced Sui -> Ethereum スワップの検証 (1inch Fusion+ integrated)
+  // Enhanced Sui -> Ethereum swap verification (1inch Fusion+ integrated)
   async verifyEnhancedSuiToEthSwap(suiAmount: bigint): Promise<SwapResult> {
-    console.log('🔍 Enhanced Sui -> Ethereum スワップ検証開始 (1inch Fusion+)...');
+    console.log('🔍 Starting Enhanced Sui -> Ethereum swap verification (1inch Fusion+)...');
     console.log('==================================================');
     
     try {
@@ -555,61 +555,61 @@ class BidirectionalSwapVerifier {
       const userAddress = userAccount.address;
 
       // 1. Security Check
-      console.log('\n🛡️ Step 1: セキュリティチェック');
+      console.log('\n🛡️ Step 1: Security Check');
       const securityPassed = await this.security.performSecurityCheck(txHash, userAddress, 'resolver');
       if (!securityPassed) {
-        throw new Error('セキュリティチェックに失敗しました');
+        throw new Error('Security check failed');
       }
 
       // 2. Create Fusion Order
-      console.log('\n📦 Step 2: Fusion Order作成');
+      console.log('\n📦 Step 2: Create Fusion Order');
       const order = await this.createFusionOrder(suiAmount, 'SUI', 'ETH');
       
       // 3. Share Order via Relayer
-      console.log('\n📤 Step 3: リレイヤーサービス経由でオーダー共有');
+      console.log('\n📤 Step 3: Share Order via Relayer Service');
       await this.relayer.shareOrder(order);
 
       // 4. Dutch Auction Processing
-      console.log('\n🏁 Step 4: Dutch Auction処理');
+      console.log('\n🏁 Step 4: Dutch Auction Processing');
       const currentRate = this.dutchAuction.calculateCurrentRate(order.createdAt, SUI_TO_ETH_RATE);
       
       // 5. Gas Price Adjustment
-      console.log('\n⛽ Step 5: Gas価格調整');
+      console.log('\n⛽ Step 5: Gas Price Adjustment');
       const adjustedRate = await this.gasAdjustment.adjustPriceForGasVolatility(currentRate, 1);
 
       // 6. Generate Secret and Hash Lock
-      console.log('\n🔑 Step 6: シークレットとハッシュロック生成');
+      console.log('\n🔑 Step 6: Generate Secret and Hash Lock');
       const secret = generateSecret();
       const hashLock = createHashLock(secret);
       const timeLock = Math.floor(Date.now() / 1000) + TIMELOCK_DURATION;
       const suiTimeLock = BigInt(Date.now() + SUI_TIMELOCK_DURATION);
       
-      console.log(`📝 シークレット生成: ${secret}`);
-      console.log(`🔒 ハッシュロック生成: ${hashLock}`);
-      console.log(`⏰ Ethereum タイムロック設定: ${timeLock}`);
-      console.log(`⏰ Sui タイムロック設定: ${suiTimeLock}`);
+      console.log(`📝 Secret generated: ${secret}`);
+      console.log(`🔒 Hash lock generated: ${hashLock}`);
+      console.log(`⏰ Ethereum timelock set: ${timeLock}`);
+      console.log(`⏰ Sui timelock set: ${suiTimeLock}`);
 
       // 7. Create Sui Escrow with Safety Deposit
-      console.log('\n📦 Step 7: Safety Deposit付きSuiエスクロー作成');
+      console.log('\n📦 Step 7: Create Sui Escrow with Safety Deposit');
       const minSuiAmount = BigInt(1000000000);
       const finalSuiAmount = suiAmount < minSuiAmount ? minSuiAmount : suiAmount;
       const { totalAmount: suiTotalAmount } = await this.suiSafetyDeposit.createEscrowWithSafetyDeposit(finalSuiAmount, SUI_RESOLVER2_ADDRESS);
       
       const suiEscrowId = await this.createSuiEscrow(hashLock, suiTimeLock, suiTotalAmount);
-      console.log(`📦 Sui エスクロー作成: ${suiEscrowId}`);
+      console.log(`📦 Sui escrow created: ${suiEscrowId}`);
 
       // 8. Fill Sui Escrow
-      console.log('\n🔄 Step 8: Suiエスクロー フィル');
+      console.log('\n🔄 Step 8: Fill Sui Escrow');
       await this.finalityLock.shareSecretConditionally(suiEscrowId, secret, SUI_RESOLVER2_ADDRESS);
       await this.fillSuiEscrow(suiEscrowId, finalSuiAmount, secret, false);
-      console.log(`✅ Sui エスクロー フィル完了`);
+      console.log(`✅ Sui escrow fill completed`);
 
       // 9. Wait for Finality
-      console.log('\n⏳ Step 9: Finality待機');
+      console.log('\n⏳ Step 9: Wait for Finality');
       await this.finalityLock.waitForChainFinality(2, 12345); // Simulate Sui block
 
       // 10. Create and Fill Ethereum Escrow
-      console.log('\n🔄 Step 10: Ethereumエスクロー作成・フィル');
+      console.log('\n🔄 Step 10: Create and Fill Ethereum Escrow');
       const ethAmount = (suiAmount * BigInt(Math.floor(ETH_TO_SUI_RATE * 1e18))) / BigInt(1e18);
       const minEthAmount = parseEther('0.0001');
       const finalEthAmount = ethAmount < minEthAmount ? minEthAmount : ethAmount;
@@ -617,21 +617,21 @@ class BidirectionalSwapVerifier {
       const { totalAmount: ethTotalAmount } = await this.ethSafetyDeposit.createEscrowWithSafetyDeposit(finalEthAmount, RESOLVER2_ADDRESS);
       
       const escrowId = await this.createEthEscrow(hashLock, BigInt(timeLock), ethTotalAmount);
-      console.log(`📦 Ethereum エスクロー作成: ${escrowId}`);
+      console.log(`📦 Ethereum escrow created: ${escrowId}`);
       
       await this.finalityLock.shareSecretConditionally(escrowId, secret, RESOLVER2_ADDRESS);
       await this.fillEthEscrow(escrowId, finalEthAmount, secret);
-      console.log(`✅ Ethereum エスクロー フィル完了`);
+      console.log(`✅ Ethereum escrow fill completed`);
 
       // 11. Conditional Secret Sharing
-      console.log('\n🔑 Step 11: 条件付きシークレット共有');
+      console.log('\n🔑 Step 11: Conditional Secret Sharing');
       await this.relayer.shareSecretConditionally(
         order.id, 
         secret, 
         'finality_confirmed'
       );
 
-      console.log('\n🎉 Enhanced Sui -> Ethereum スワップ完了 (1inch Fusion+)!');
+      console.log('\n🎉 Enhanced Sui -> Ethereum swap completed (1inch Fusion+)!');
       console.log('==================================================');
       this.printSwapSummary('SUI → ETH', finalSuiAmount, finalEthAmount, order.id, escrowId);
 
@@ -643,7 +643,7 @@ class BidirectionalSwapVerifier {
       };
 
     } catch (error) {
-      console.error('❌ Enhanced Sui -> Ethereum スワップ検証失敗:', error);
+      console.error('❌ Enhanced Sui -> Ethereum swap verification failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -651,59 +651,59 @@ class BidirectionalSwapVerifier {
     }
   }
 
-  // Ethereum エスクロー作成
+  // Create Ethereum Escrow
   private async createEthEscrow(hashLock: string, timeLock: bigint, amount: bigint): Promise<string> {
     try {
-      console.log(`🔧 Ethereum エスクロー作成準備...`);
-      console.log(`📝 ハッシュロック: ${hashLock}`);
-      console.log(`⏰ タイムロック: ${timeLock}`);
-      console.log(`💰 金額: ${formatEther(amount)} ETH`);
-      console.log(`👤 テイカー: ${userAccount.address}`);
+      console.log(`🔧 Preparing Ethereum escrow creation...`);
+      console.log(`📝 Hash lock: ${hashLock}`);
+      console.log(`⏰ Time lock: ${timeLock}`);
+      console.log(`💰 Amount: ${formatEther(amount)} ETH`);
+      console.log(`👤 Taker: ${userAccount.address}`);
       
-      // 最小金額の設定
-      const minAmount = parseEther('0.0001'); // 最小0.0001 ETH
+      // Set minimum amount
+      const minAmount = parseEther('0.0001'); // Minimum 0.0001 ETH
       if (amount < minAmount) {
-        console.log(`⚠️ 金額が小さすぎます。最小金額に調整: ${formatEther(minAmount)} ETH`);
+        console.log(`⚠️ Amount is too small. Adjusting to minimum amount: ${formatEther(minAmount)} ETH`);
         amount = minAmount;
       }
       
-      // エスクロー作成前の状態チェック
+      // Check state before escrow creation
       const balance = await publicClient.getBalance({ address: userAccount.address });
-      console.log(`💰 ユーザー残高: ${formatEther(balance)} ETH`);
+      console.log(`💰 User balance: ${formatEther(balance)} ETH`);
       if (balance < amount) {
-        throw new Error(`残高不足: ${formatEther(balance)} < ${formatEther(amount)}`);
+        throw new Error(`Insufficient balance: ${formatEther(balance)} < ${formatEther(amount)}`);
       }
 
-      // タイムロックの妥当性チェック
+      // Validate time lock
       const currentTime = Math.floor(Date.now() / 1000);
       if (timeLock <= currentTime) {
-        throw new Error(`タイムロックが過去の時刻です: ${timeLock} <= ${currentTime}`);
+        throw new Error(`Time lock is in the past: ${timeLock} <= ${currentTime}`);
       }
       
-      // パラメータの型とフォーマット確認
-      console.log(`🔍 デバッグ情報:`);
-      console.log(`  - ハッシュロック型: ${typeof hashLock}, 長さ: ${hashLock.length}`);
-      console.log(`  - タイムロック型: ${typeof timeLock}, 値: ${timeLock}`);
-      console.log(`  - 金額型: ${typeof amount}, 値: ${amount}`);
-      console.log(`  - 現在時刻: ${currentTime}`);
-      console.log(`  - タイムロック > 現在時刻: ${Number(timeLock) > currentTime}`);
-      console.log(`  - アドレス有効性: ${userAccount.address.startsWith('0x') && userAccount.address.length === 42}`);
-      console.log(`  - コントラクトアドレス: ${this.ethEscrowAddress}`);
-      console.log(`  - ネットワーク: ${await publicClient.getChainId()}`);
-      console.log(`  - ガス価格: ${formatGwei(await publicClient.getGasPrice())} Gwei`);
+      // Check parameter types and format
+      console.log(`🔍 Debug information:`);
+      console.log(`  - Hash lock type: ${typeof hashLock}, length: ${hashLock.length}`);
+      console.log(`  - Time lock type: ${typeof timeLock}, value: ${timeLock}`);
+      console.log(`  - Amount type: ${typeof amount}, value: ${amount}`);
+      console.log(`  - Current time: ${currentTime}`);
+      console.log(`  - Time lock > current time: ${Number(timeLock) > currentTime}`);
+      console.log(`  - Address validity: ${userAccount.address.startsWith('0x') && userAccount.address.length === 42}`);
+      console.log(`  - Contract address: ${this.ethEscrowAddress}`);
+      console.log(`  - Network: ${await publicClient.getChainId()}`);
+      console.log(`  - Gas price: ${formatGwei(await publicClient.getGasPrice())} Gwei`);
 
-      // 関数データをエンコード
+      // Encode function data
       const data = encodeFunctionData({
         abi: ESCROW_ABI,
         functionName: 'createEscrow',
         args: [hashLock as `0x${string}`, BigInt(timeLock), userAccount.address, 'test-sui-order'],
       });
 
-      console.log(`📤 トランザクション送信中...`);
+      console.log(`📤 Sending transaction...`);
       
-      // ガス価格を最適化して高速化
+      // Optimize gas price for speed
       const gasPrice = await publicClient.getGasPrice();
-      const optimizedGasPrice = (gasPrice * 120n) / 100n; // 20%増加で高速化
+      const optimizedGasPrice = (gasPrice * 120n) / 100n; // 20% increase for speed
       
       const hash = await walletClient.sendTransaction({
         account: userAccount,
@@ -711,10 +711,10 @@ class BidirectionalSwapVerifier {
         data,
         value: amount,
         gasPrice: optimizedGasPrice,
-        gas: 500000n, // ガス制限を大幅に増加
+        gas: 500000n, // Significantly increase gas limit
       });
       
-      console.log(`📋 トランザクションハッシュ: ${hash}`);
+      console.log(`📋 Transaction hash: ${hash}`);
       
       const receipt = await publicClient.waitForTransactionReceipt({ 
         hash,
@@ -722,10 +722,10 @@ class BidirectionalSwapVerifier {
         pollingInterval: 2000
       });
       
-      console.log(`📋 トランザクション完了: ${receipt.status}`);
+      console.log(`📋 Transaction completed: ${receipt.status}`);
       
       if (receipt.status === 'success') {
-        // トランザクションのログからエスクローIDを取得
+        // Get escrow ID from transaction logs
         const logs = await publicClient.getLogs({
           address: this.ethEscrowAddress as `0x${string}`,
           fromBlock: receipt.blockNumber,
@@ -748,22 +748,22 @@ class BidirectionalSwapVerifier {
         if (logs.length > 0) {
           const escrowId = logs[0].args.escrowId;
           if (escrowId) {
-          console.log(`📦 エスクローID取得: ${escrowId}`);
+          console.log(`📦 Escrow ID retrieved: ${escrowId}`);
           
-          // エスクローが正しく作成されたか確認
+          // Verify escrow was created correctly
           const exists = await this.verifyEscrowExists(escrowId);
           if (exists) {
-            console.log(`✅ エスクロー作成確認済み`);
+            console.log(`✅ Escrow creation confirmed`);
             return escrowId;
           } else {
-            throw new Error('エスクローが正しく作成されませんでした');
+            throw new Error('Escrow was not created correctly');
           }
         } else {
-            console.warn('⚠️ ログからエスクローIDを取得できませんでした。計算によるフォールバックを使用します。');
+            console.warn('⚠️ Could not retrieve escrow ID from logs. Using calculation fallback.');
           }
         }
         
-          // フォールバック: 計算によるエスクローID取得
+          // Fallback: Calculate escrow ID
           const currentTimestamp = Math.floor(Date.now() / 1000);
           const escrowId = keccak256(
             encodePacked(
@@ -772,43 +772,43 @@ class BidirectionalSwapVerifier {
             )
           );
           
-          console.log(`📦 エスクローID計算: ${escrowId}`);
+          console.log(`📦 Escrow ID calculated: ${escrowId}`);
           
-          // エスクローが正しく作成されたか確認
+          // Verify escrow was created correctly
           const exists = await this.verifyEscrowExists(escrowId);
           if (exists) {
-            console.log(`✅ エスクロー作成確認済み`);
+            console.log(`✅ Escrow creation confirmed`);
             return escrowId;
           } else {
-            throw new Error('エスクローが正しく作成されませんでした');
+            throw new Error('Escrow was not created correctly');
         }
       } else {
-        throw new Error('トランザクションが失敗しました');
+        throw new Error('Transaction failed');
       }
       
     } catch (error) {
-      console.error('❌ Ethereum エスクロー作成エラー:', error);
+      console.error('❌ Ethereum escrow creation error:', error);
       
-      // 詳細なエラー情報を取得
+      // Get detailed error information
       if (error && typeof error === 'object' && 'cause' in error) {
-        console.error('詳細エラー:', error.cause);
+        console.error('Detailed error:', error.cause);
       }
       
-      // トランザクションの詳細情報を取得
+      // Get transaction details
       try {
         if (error && typeof error === 'object' && 'hash' in error) {
           const tx = await publicClient.getTransaction({ hash: error.hash as `0x${string}` });
-          console.error('トランザクション詳細:', tx);
+          console.error('Transaction details:', tx);
         }
       } catch (txError) {
-        console.error('トランザクション詳細取得エラー:', txError);
+        console.error('Transaction details retrieval error:', txError);
       }
       
       throw error;
     }
   }
 
-  // エスクロー存在確認
+  // Verify escrow exists
   private async verifyEscrowExists(escrowId: string): Promise<boolean> {
     try {
       const escrow = await publicClient.readContract({
@@ -820,7 +820,7 @@ class BidirectionalSwapVerifier {
       
       const [maker, taker, totalAmount, remainingAmount, , , completed, refunded, ,] = escrow;
       
-      console.log(`🔍 エスクロー情報確認:`);
+      console.log(`🔍 Escrow information verification:`);
       console.log(`  👤 Maker: ${maker}`);
       console.log(`  👤 Taker: ${taker}`);
       console.log(`  💰 Total Amount: ${formatEther(totalAmount)} ETH`);
@@ -828,56 +828,56 @@ class BidirectionalSwapVerifier {
       console.log(`  ✅ Completed: ${completed}`);
       console.log(`  ❌ Refunded: ${refunded}`);
       
-      // エスクローが存在するかチェック（makerがゼロアドレスでない、かつtotalAmountが0でない）
+      // Check if escrow exists (maker is not zero address and totalAmount is not 0)
       return maker !== '0x0000000000000000000000000000000000000000' && totalAmount > 0n;
     } catch (error) {
-      console.error('❌ エスクロー確認エラー:', error);
+      console.error('❌ Escrow verification error:', error);
       return false;
     }
   }
 
-  // Ethereum エスクロー フィル（2人のResolverがpartial fill）
+  // Fill Ethereum Escrow (2 resolvers perform partial fill)
   private async fillEthEscrow(escrowId: string, amount: bigint, secret: string): Promise<void> {
     try {
-      console.log(`🔧 Ethereum エスクロー フィル準備...`);
-      console.log(`📦 エスクローID: ${escrowId}`);
-      console.log(`💰 総金額: ${formatEther(amount)} ETH`);
-      console.log(`🔑 シークレット: ${secret}`);
+      console.log(`🔧 Preparing Ethereum escrow fill...`);
+      console.log(`📦 Escrow ID: ${escrowId}`);
+      console.log(`💰 Total amount: ${formatEther(amount)} ETH`);
+      console.log(`🔑 Secret: ${secret}`);
 
-      // エスクロー情報を事前確認
+      // Pre-verify escrow information
       const escrowInfo = await this.getEscrowInfo(escrowId);
-      console.log(`🔍 エスクロー事前確認:`);
-      console.log(`  💰 残額: ${formatEther(escrowInfo.remainingAmount)} ETH`);
-      console.log(`  ✅ 完了済み: ${escrowInfo.completed}`);
-      console.log(`  ❌ 返金済み: ${escrowInfo.refunded}`);
-      console.log(`  🔒 ハッシュロック: ${escrowInfo.hashLock}`);
+      console.log(`🔍 Pre-escrow verification:`);
+      console.log(`  💰 Remaining amount: ${formatEther(escrowInfo.remainingAmount)} ETH`);
+      console.log(`  ✅ Completed: ${escrowInfo.completed}`);
+      console.log(`  ❌ Refunded: ${escrowInfo.refunded}`);
+      console.log(`  🔒 Hash lock: ${escrowInfo.hashLock}`);
 
       if (escrowInfo.completed) {
-        throw new Error('エスクローは既に完了済みです');
+        throw new Error('Escrow is already completed');
       }
       if (escrowInfo.refunded) {
-        throw new Error('エスクローは既に返金済みです');
+        throw new Error('Escrow is already refunded');
       }
       if (amount > escrowInfo.remainingAmount) {
-        throw new Error(`要求額(${formatEther(amount)} ETH)が残額(${formatEther(escrowInfo.remainingAmount)} ETH)を超えています`);
+        throw new Error(`Requested amount (${formatEther(amount)} ETH) exceeds remaining amount (${formatEther(escrowInfo.remainingAmount)} ETH)`);
       }
 
-      // シークレット検証のデバッグ
+      // Secret verification debug
       const calculatedHash = createHashLock(secret);
       const isValidSecret = verifySecret(secret, escrowInfo.hashLock);
-      console.log(`🔍 シークレット検証:`);
-      console.log(`  🔑 シークレット: ${secret}`);
-      console.log(`  🔒 計算されたハッシュ: ${calculatedHash}`);
-      console.log(`  🔒 保存されたハッシュ: ${escrowInfo.hashLock}`);
-      console.log(`  ✅ 検証結果: ${isValidSecret}`);
+      console.log(`🔍 Secret verification:`);
+      console.log(`  🔑 Secret: ${secret}`);
+      console.log(`  🔒 Calculated hash: ${calculatedHash}`);
+      console.log(`  🔒 Stored hash: ${escrowInfo.hashLock}`);
+      console.log(`  ✅ Verification result: ${isValidSecret}`);
 
       if (!isValidSecret) {
-        throw new Error('シークレットがハッシュロックと一致しません');
+        throw new Error('Secret does not match hash lock');
       }
 
-      // Partial fill: Resolver2が半分をfill
+      // Partial fill: Resolver2 fills half
       const halfAmount = amount / BigInt(2);
-      console.log(`🔄 Resolver2がpartial fill開始: ${formatEther(halfAmount)} ETH`);
+      console.log(`🔄 Resolver2 starting partial fill: ${formatEther(halfAmount)} ETH`);
       
       const data1 = encodeFunctionData({
         abi: ESCROW_ABI,
@@ -885,7 +885,7 @@ class BidirectionalSwapVerifier {
         args: [escrowId as `0x${string}`, halfAmount, secret as `0x${string}`],
       });
 
-      console.log(`📤 Resolver2トランザクション送信中...`);
+      console.log(`📤 Sending Resolver2 transaction...`);
       
       const gasPrice = await publicClient.getGasPrice();
       const optimizedGasPrice = (gasPrice * 120n) / 100n;
@@ -897,17 +897,17 @@ class BidirectionalSwapVerifier {
         gasPrice: optimizedGasPrice,
         gas: 100000n,
       });
-      console.log(`📋 Resolver2トランザクションハッシュ: ${hash1}`);
+      console.log(`📋 Resolver2 transaction hash: ${hash1}`);
       
       const receipt1 = await publicClient.waitForTransactionReceipt({ 
         hash: hash1,
         timeout: 60000,
         pollingInterval: 2000
       });
-      console.log(`✅ Resolver2トランザクション完了: ${receipt1.status}`);
+      console.log(`✅ Resolver2 transaction completed: ${receipt1.status}`);
       
-      // Resolver2が受け取った資金を実際の受取アドレスに送金
-      console.log(`🔄 Resolver2が受取アドレスに送金開始: ${formatEther(halfAmount)} ETH`);
+      // Resolver2 transfers received funds to actual recipient address
+      console.log(`🔄 Resolver2 starting transfer to recipient address: ${formatEther(halfAmount)} ETH`);
       const transferData1 = encodeFunctionData({
         abi: [{
           type: 'function',
@@ -927,26 +927,26 @@ class BidirectionalSwapVerifier {
         gasPrice: optimizedGasPrice,
         gas: 21000n,
       });
-      console.log(`📋 Resolver2送金ハッシュ: ${transferHash1}`);
+      console.log(`📋 Resolver2 transfer hash: ${transferHash1}`);
       
       const transferReceipt1 = await publicClient.waitForTransactionReceipt({ 
         hash: transferHash1,
         timeout: 60000,
         pollingInterval: 2000
       });
-      console.log(`✅ Resolver2送金完了: ${transferReceipt1.status}`);
-      console.log(`🔗 Resolver2送金トランザクション: https://sepolia.etherscan.io/tx/${transferHash1}`);
-      console.log(`🔗 ユーザーアドレス入金履歴: https://sepolia.etherscan.io/tx/${transferHash1}#eventlog`);
+      console.log(`✅ Resolver2 transfer completed: ${transferReceipt1.status}`);
+      console.log(`🔗 Resolver2 transfer transaction: https://sepolia.etherscan.io/tx/${transferHash1}`);
+      console.log(`🔗 User address deposit history: https://sepolia.etherscan.io/tx/${transferHash1}#eventlog`);
       
-      // Partial fill後のエスクロー情報を確認
+      // Verify escrow information after partial fill
       const midEscrowInfo = await this.getEscrowInfo(escrowId);
-      console.log(`🔍 Resolver2フィル後確認:`);
-      console.log(`  💰 残額: ${formatEther(midEscrowInfo.remainingAmount)} ETH`);
-      console.log(`  ✅ 完了済み: ${midEscrowInfo.completed}`);
+      console.log(`🔍 Post-Resolver2 fill verification:`);
+      console.log(`  💰 Remaining amount: ${formatEther(midEscrowInfo.remainingAmount)} ETH`);
+      console.log(`  ✅ Completed: ${midEscrowInfo.completed}`);
 
-      // Partial fill: Resolver3が残りをfill
+      // Partial fill: Resolver3 fills the remainder
       const remainingAmount = amount - halfAmount;
-      console.log(`🔄 Resolver3がpartial fill開始: ${formatEther(remainingAmount)} ETH`);
+      console.log(`🔄 Resolver3 starting partial fill: ${formatEther(remainingAmount)} ETH`);
       
       const data2 = encodeFunctionData({
         abi: ESCROW_ABI,
@@ -954,7 +954,7 @@ class BidirectionalSwapVerifier {
         args: [escrowId as `0x${string}`, remainingAmount, secret as `0x${string}`],
       });
 
-      console.log(`📤 Resolver3トランザクション送信中...`);
+      console.log(`📤 Sending Resolver3 transaction...`);
       
       const hash2 = await walletClient.sendTransaction({
         account: resolver3Account,
@@ -963,17 +963,17 @@ class BidirectionalSwapVerifier {
         gasPrice: optimizedGasPrice,
         gas: 100000n,
       });
-      console.log(`📋 Resolver3トランザクションハッシュ: ${hash2}`);
+      console.log(`📋 Resolver3 transaction hash: ${hash2}`);
       
       const receipt2 = await publicClient.waitForTransactionReceipt({ 
         hash: hash2,
         timeout: 60000,
         pollingInterval: 2000
       });
-      console.log(`✅ Resolver3トランザクション完了: ${receipt2.status}`);
+      console.log(`✅ Resolver3 transaction completed: ${receipt2.status}`);
       
-      // Resolver3が受け取った資金を実際の受取アドレスに送金
-      console.log(`🔄 Resolver3が受取アドレスに送金開始: ${formatEther(remainingAmount)} ETH`);
+      // Resolver3 transfers received funds to actual recipient address
+      console.log(`🔄 Resolver3 starting transfer to recipient address: ${formatEther(remainingAmount)} ETH`);
       const transferHash2 = await walletClient.sendTransaction({
         account: resolver3Account,
         to: userAccount.address as `0x${string}`,
@@ -981,45 +981,45 @@ class BidirectionalSwapVerifier {
         gasPrice: optimizedGasPrice,
         gas: 21000n,
       });
-      console.log(`📋 Resolver3送金ハッシュ: ${transferHash2}`);
+      console.log(`📋 Resolver3 transfer hash: ${transferHash2}`);
       
       const transferReceipt2 = await publicClient.waitForTransactionReceipt({ 
         hash: transferHash2,
         timeout: 60000,
         pollingInterval: 2000
       });
-      console.log(`✅ Resolver3送金完了: ${transferReceipt2.status}`);
-      console.log(`🔗 Resolver3送金トランザクション: https://sepolia.etherscan.io/tx/${transferHash2}`);
-      console.log(`🔗 ユーザーアドレス入金履歴: https://sepolia.etherscan.io/tx/${transferHash2}#eventlog`);
+      console.log(`✅ Resolver3 transfer completed: ${transferReceipt2.status}`);
+      console.log(`🔗 Resolver3 transfer transaction: https://sepolia.etherscan.io/tx/${transferHash2}`);
+      console.log(`🔗 User address deposit history: https://sepolia.etherscan.io/tx/${transferHash2}#eventlog`);
       
-      // 最終的なエスクロー情報を確認
+      // Final escrow information verification
       const finalEscrowInfo = await this.getEscrowInfo(escrowId);
-      console.log(`🔍 最終確認:`);
-      console.log(`  💰 残額: ${formatEther(finalEscrowInfo.remainingAmount)} ETH`);
-      console.log(`  ✅ 完了済み: ${finalEscrowInfo.completed}`);
+      console.log(`🔍 Final verification:`);
+      console.log(`  💰 Remaining amount: ${formatEther(finalEscrowInfo.remainingAmount)} ETH`);
+      console.log(`  ✅ Completed: ${finalEscrowInfo.completed}`);
       
-      console.log(`✅ Ethereum エスクロー フィル完了（2人のResolverによるpartial fill）`);
-      console.log(`📋 フィル詳細:`);
+      console.log(`✅ Ethereum escrow fill completed (partial fill by 2 resolvers)`);
+      console.log(`📋 Fill details:`);
       console.log(`  👤 Resolver2: ${formatEther(halfAmount)} ETH → ${userAccount.address}`);
       console.log(`  👤 Resolver3: ${formatEther(remainingAmount)} ETH → ${userAccount.address}`);
-      console.log(`  💰 合計: ${formatEther(amount)} ETH`);
-      console.log(`🔗 送金トランザクション履歴:`);
+      console.log(`  💰 Total: ${formatEther(amount)} ETH`);
+      console.log(`🔗 Transfer transaction history:`);
       console.log(`  📤 Resolver2: https://sepolia.etherscan.io/tx/${transferHash1}`);
       console.log(`  📤 Resolver3: https://sepolia.etherscan.io/tx/${transferHash2}`);
-      console.log(`🔗 ユーザーアドレス入金履歴:`);
-      console.log(`  📥 入金1: https://sepolia.etherscan.io/tx/${transferHash1}#eventlog`);
-      console.log(`  📥 入金2: https://sepolia.etherscan.io/tx/${transferHash2}#eventlog`);
+      console.log(`🔗 User address deposit history:`);
+      console.log(`  📥 Deposit 1: https://sepolia.etherscan.io/tx/${transferHash1}#eventlog`);
+      console.log(`  📥 Deposit 2: https://sepolia.etherscan.io/tx/${transferHash2}#eventlog`);
       
     } catch (error) {
-      console.error('❌ Ethereum エスクロー フィルエラー:', error);
+      console.error('❌ Ethereum escrow fill error:', error);
       if (error && typeof error === 'object' && 'cause' in error) {
-        console.error('詳細エラー:', error.cause);
+        console.error('Detailed error:', error.cause);
       }
       throw error;
     }
   }
 
-  // エスクロー情報取得
+  // Get escraw information
   private async getEscrowInfo(escrowId: string) {
     try {
       const escrow = await publicClient.readContract({
@@ -1049,35 +1049,35 @@ class BidirectionalSwapVerifier {
     }
   }
 
-  // Sui エスクロー作成
+  // Create Sui escraw
   private async createSuiEscrow(hashLock: string, timeLock: bigint, amount: bigint): Promise<string> {
     try {
-      // アカウントの残高を確認
+      // Check account balance
       const address = SUI_ACCOUNT_ADDRESS;
-      console.log(`🔍 Suiアカウント確認: ${address}`);
+      console.log(`🔍 Checking Sui account: ${address}`);
       
-      // 残高を確認し、必要に応じてfaucetから取得
-      await this.ensureSuiBalance(address, BigInt(3000000000)); // 3 SUI - 必要最小限に調整
+      // Check balance and get from faucet if necessary
+      await this.ensureSuiBalance(address, BigInt(3000000000)); // 3 SUI - adjusted to minimum required
       
       const transaction = new Transaction();
       
-      // ガスコインを取得して必要な検証を実行
+      // Get gas coins and perform necessary validation
       const gasCoins = await suiClient.getCoins({
         owner: address,
         coinType: '0x2::sui::SUI'
       });
       
       if (gasCoins.data.length === 0) {
-        throw new Error('ガスコインが見つかりません');
+        throw new Error('Gas coins not found');
       }
       
       if (amount <= 0) {
-        throw new Error(`無効な金額: ${amount}`);
+        throw new Error(`Invalid amount: ${amount}`);
       }
       
       const gasCoin = gasCoins.data[0];
       if (BigInt(gasCoin.balance) < amount) {
-        throw new Error(`ガスコイン残高不足: ${gasCoin.balance} < ${amount}`);
+        throw new Error(`Insufficient gas coin balance: ${gasCoin.balance} < ${amount}`);
       }
       
       transaction.setGasPayment([{
@@ -1086,18 +1086,18 @@ class BidirectionalSwapVerifier {
         digest: gasCoin.digest
       }]);
       
-      console.log(`🔧 Sui トランザクション準備中...`);
+      console.log(`🔧 Preparing Sui transaction...`);
       
-      // Sui コインを取得（ガスコインから分割）
+      // Get Sui coins (split from gas coin)
       const [coin] = transaction.splitCoins(transaction.gas, [Number(amount)]);
       
-      // エスクロー作成関数を呼び出し
+      // Call escrow creation function
       transaction.moveCall({
         target: `${this.suiPackageId}::cross_chain_escrow::create_and_share_escrow`,
         typeArguments: ['0x2::sui::SUI'],
         arguments: [
           coin,
-          transaction.pure.address('0x0'), // taker (誰でも可)
+          transaction.pure.address('0x0'), // taker (anyone can take)
           transaction.pure.vector('u8', this.hexStringToBytes(hashLock) as number[]),
           transaction.pure.u64(timeLock),
           transaction.pure.string('test-eth-order'),
@@ -1105,11 +1105,11 @@ class BidirectionalSwapVerifier {
         ],
       });
 
-      console.log(`🔧 Sui トランザクション準備完了`);
-      console.log(`💰 金額: ${amount}`);
-      console.log(`⏰ タイムロック: ${timeLock}`);
-      console.log(`🔒 ハッシュロック: ${hashLock}`);
-      console.log(`⛽ ガスコイン: ${gasCoin.coinObjectId}`);
+      console.log(`🔧 Sui transaction preparation completed`);
+      console.log(`💰 Amount: ${amount}`);
+      console.log(`⏰ Time lock: ${timeLock}`);
+      console.log(`🔒 Hash lock: ${hashLock}`);
+      console.log(`⛽ Gas coin: ${gasCoin.coinObjectId}`);
 
       const result = await suiClient.signAndExecuteTransaction({
         transaction,
@@ -1118,74 +1118,74 @@ class BidirectionalSwapVerifier {
           showEffects: true,
           showObjectChanges: true,
         },
-        requestType: 'WaitForLocalExecution', // ローカル実行を待つ
+        requestType: 'WaitForLocalExecution', // Wait for local execution
       });
 
-      console.log(`📋 トランザクション結果:`, result);
+      console.log(`📋 Transaction result:`, result);
 
-      // エスクローIDを取得
+      // Get escrow ID
       const createdObject = result.objectChanges?.find(
         change => change.type === 'created' && change.objectType?.includes('CrossChainEscrow')
       );
       
       if (!createdObject || createdObject.type !== 'created') {
-        console.error('❌ エスクローオブジェクトが見つかりません');
+        console.error('❌ Escrow object not found');
         console.error('Object changes:', result.objectChanges);
-        throw new Error('Sui エスクロー作成に失敗しました');
+        throw new Error('Sui escrow creation failed');
       }
 
       return (createdObject as any).objectId;
     } catch (error) {
-      console.error('❌ Sui エスクロー作成エラー:', error);
+      console.error('❌ Sui escrow creation error:', error);
       if (error && typeof error === 'object' && 'cause' in error) {
-        console.error('詳細エラー:', error.cause);
+        console.error('Detailed error:', error.cause);
       }
       throw error;
     }
   }
 
-  // Sui エスクロー フィル（2人のResolverがpartial fill）
+  // Fill Sui Escrow (2 resolvers perform partial fill)
   private async fillSuiEscrow(escrowId: string, amount: bigint, secret: string, isEthToSui: boolean = true): Promise<void> {
     try {
-      // 残高を確認し、必要に応じてfaucetから取得
+      // Check balance and get from faucet if necessary
       const address = SUI_ACCOUNT_ADDRESS;
-      await this.ensureSuiBalance(address, BigInt(2000000000)); // 2 SUI - 必要最小限に調整
+      await this.ensureSuiBalance(address, BigInt(2000000000)); // 2 SUI - adjusted to minimum required
       
-      console.log(`🔧 Sui エスクロー フィル準備...`);
-      console.log(`📦 エスクローID: ${escrowId}`);
-      console.log(`💰 総金額: ${amount} SUI`);
-      console.log(`🔑 シークレット: ${secret}`);
-      console.log(`📋 スワップ方向: ${isEthToSui ? 'Sepolia -> Sui' : 'Sui -> Sepolia'}`);
+      console.log(`🔧 Preparing Sui escrow fill...`);
+      console.log(`📦 Escrow ID: ${escrowId}`);
+      console.log(`💰 Total amount: ${amount} SUI`);
+      console.log(`🔑 Secret: ${secret}`);
+      console.log(` Swap direction: ${isEthToSui ? 'Sepolia -> Sui' : 'Sui -> Sepolia'}`);
 
-      // スワップ方向に応じて受取アドレスを決定
+      // Determine recipient addresses based on swap direction
       let targetAddress1: string;
       let targetAddress2: string;
       
       if (isEthToSui) {
-        // Ethereum -> Sui スワップ: ユーザーのSuiアドレスに送金
-        targetAddress1 = SUI_ACCOUNT_ADDRESS; // ユーザーのSuiアドレス
-        targetAddress2 = SUI_ACCOUNT_ADDRESS; // ユーザーのSuiアドレス
-        console.log(`📤 送金先: ユーザーのSuiアドレス ${SUI_ACCOUNT_ADDRESS}`);
+        // Ethereum -> Sui swap: Send to user's Sui address
+        targetAddress1 = SUI_ACCOUNT_ADDRESS; // User's Sui address
+        targetAddress2 = SUI_ACCOUNT_ADDRESS; // User's Sui address
+        console.log(`📤 Recipient: User's Sui address ${SUI_ACCOUNT_ADDRESS}`);
       } else {
-        // Sui -> Ethereum スワップ: ResolverのSuiアドレスに送金
+        // Sui -> Ethereum swap: Send to resolver's Sui address
         targetAddress1 = SUI_RESOLVER2_ADDRESS;
         targetAddress2 = SUI_RESOLVER3_ADDRESS;
-        console.log(`📤 送金先: Resolverアドレス (Resolver2: ${SUI_RESOLVER2_ADDRESS}, Resolver3: ${SUI_RESOLVER3_ADDRESS})`);
+        console.log(`📤 Recipient: Resolver addresses (Resolver2: ${SUI_RESOLVER2_ADDRESS}, Resolver3: ${SUI_RESOLVER3_ADDRESS})`);
       }
 
-      // Partial fill: Resolver2が半分をfill
+      // Partial fill: Resolver2 fills half
       const halfAmount = amount / BigInt(2);
-      console.log(`🔄 Sui Resolver2がpartial fill開始: ${halfAmount} SUI`);
+      console.log(`🔄 Sui Resolver2 starting partial fill: ${halfAmount} SUI`);
       
       const transaction1 = new Transaction();
       
-      // エスクローを取得
+      // Get escrow
       const escrow1 = transaction1.object(escrowId as `0x${string}`);
       
-      // UsedSecretsRegistry を取得
+      // Get UsedSecretsRegistry
       const registry1 = transaction1.object(SUI_USED_SECRETS_REGISTRY_ID as `0x${string}`);
       
-      // エスクロー フィル関数を呼び出し（Resolver2）
+      // Call escrow fill function (Resolver2)
       const [receivedCoin1] = transaction1.moveCall({
         target: `${this.suiPackageId}::cross_chain_escrow::fill_escrow_partial`,
         typeArguments: ['0x2::sui::SUI'],
@@ -1198,7 +1198,7 @@ class BidirectionalSwapVerifier {
         ],
       });
 
-      // 受取アドレスに送金
+      // Transfer to recipient address
       transaction1.transferObjects([receivedCoin1], transaction1.pure.address(targetAddress1));
 
       const result1 = await suiClient.signAndExecuteTransaction({
@@ -1210,26 +1210,26 @@ class BidirectionalSwapVerifier {
         requestType: 'WaitForLocalExecution',
       });
 
-      console.log(`✅ Sui Resolver2 フィル完了:`, result1);
-      console.log(`📋 Resolver2送金詳細:`);
-      console.log(`  💰 金額: ${halfAmount} SUI`);
-      console.log(`  📤 送金先: ${targetAddress1}`);
-      console.log(`🔗 Resolver2送金トランザクション: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
-      console.log(`🔗 受取アドレス入金履歴: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
+      console.log(`✅ Sui Resolver2 fill completed:`, result1);
+      console.log(`📋 Resolver2 transfer details:`);
+      console.log(`  💰 Amount: ${halfAmount} SUI`);
+      console.log(`  📤 Recipient: ${targetAddress1}`);
+      console.log(`🔗 Resolver2 transfer transaction: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
+      console.log(`🔗 Recipient deposit history: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
 
-      // Partial fill: Resolver3が残りをfill
+      // Partial fill: Resolver3 fills the remainder
       const remainingAmount = amount - halfAmount;
-      console.log(`🔄 Sui Resolver3がpartial fill開始: ${remainingAmount} SUI`);
+      console.log(`🔄 Sui Resolver3 starting partial fill: ${remainingAmount} SUI`);
       
       const transaction2 = new Transaction();
       
-      // エスクローを取得
+      // Get escrow
       const escrow2 = transaction2.object(escrowId as `0x${string}`);
       
-      // UsedSecretsRegistry を取得
+      // Get UsedSecretsRegistry
       const registry2 = transaction2.object(SUI_USED_SECRETS_REGISTRY_ID as `0x${string}`);
       
-      // エスクロー フィル関数を呼び出し（Resolver3）
+      // Call escrow fill function (Resolver3)
       const [receivedCoin2] = transaction2.moveCall({
         target: `${this.suiPackageId}::cross_chain_escrow::fill_escrow_partial`,
         typeArguments: ['0x2::sui::SUI'],
@@ -1242,7 +1242,7 @@ class BidirectionalSwapVerifier {
         ],
       });
 
-      // 受取アドレスに送金
+      // Transfer to recipient address
       transaction2.transferObjects([receivedCoin2], transaction2.pure.address(targetAddress2));
 
       const result2 = await suiClient.signAndExecuteTransaction({
@@ -1254,41 +1254,41 @@ class BidirectionalSwapVerifier {
         requestType: 'WaitForLocalExecution',
       });
 
-      console.log(`✅ Sui Resolver3 フィル完了:`, result2);
-      console.log(`📋 Resolver3送金詳細:`);
-      console.log(`  💰 金額: ${remainingAmount} SUI`);
-      console.log(`  📤 送金先: ${targetAddress2}`);
-      console.log(`🔗 Resolver3送金トランザクション: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
-      console.log(`🔗 受取アドレス入金履歴: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
+      console.log(`✅ Sui Resolver3 fill completed:`, result2);
+      console.log(`📋 Resolver3 transfer details:`);
+      console.log(`  💰 Amount: ${remainingAmount} SUI`);
+      console.log(`  📤 Recipient: ${targetAddress2}`);
+      console.log(`🔗 Resolver3 transfer transaction: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
+      console.log(`🔗 Recipient deposit history: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
 
-      console.log(`✅ Sui エスクロー フィル完了（2人のResolverによるpartial fill）`);
-      console.log(`📋 フィル詳細:`);
+      console.log(`✅ Sui escrow fill completed (partial fill by 2 resolvers)`);
+      console.log(`📋 Fill details:`);
       console.log(`  👤 Resolver2: ${halfAmount} SUI → ${targetAddress1}`);
       console.log(`  👤 Resolver3: ${remainingAmount} SUI → ${targetAddress2}`);
-      console.log(`  💰 合計: ${amount} SUI`);
-      console.log(`📋 スワップ方向: ${isEthToSui ? 'Sepolia -> Sui' : 'Sui -> Sepolia'}`);
-      console.log(`🔗 送金トランザクション履歴:`);
+      console.log(`  💰 Total: ${amount} SUI`);
+      console.log(`📋 Swap direction: ${isEthToSui ? 'Sepolia -> Sui' : 'Sui -> Sepolia'}`);
+      console.log(`🔗 Transfer transaction history:`);
       console.log(`  📤 Resolver2: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
       console.log(`  📤 Resolver3: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
-      console.log(`🔗 受取アドレス入金履歴:`);
-      console.log(`  📥 入金1: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
-      console.log(`  📥 入金2: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
+      console.log(`🔗 Recipient deposit history:`);
+      console.log(`  📥 Deposit1: https://suiexplorer.com/txblock/${result1.digest}?network=devnet`);
+      console.log(`  📥 Deposit2: https://suiexplorer.com/txblock/${result2.digest}?network=devnet`);
       
-      // 実際のクロスチェーンブリッジでは：
-      // - Ethereum -> Sui: ユーザーのSuiアドレスに送金
-      // - Sui -> Ethereum: ResolverのSuiアドレスに送金
-      console.log(`💡 注意: 実際のクロスチェーンブリッジでは、スワップ方向に応じて適切なアドレスに送金されます`);
+      // In actual cross-chain bridge:
+      // - Ethereum -> Sui: Send to user's Sui address
+      // - Sui -> Ethereum: Send to resolver's Sui address
+      console.log(`💡 Note: In actual cross-chain bridge, funds are sent to appropriate addresses based on swap direction`);
       
     } catch (error) {
-      console.error('❌ Sui エスクロー フィルエラー:', error);
+      console.error('❌ Sui escrow fill error:', error);
       if (error && typeof error === 'object' && 'cause' in error) {
-        console.error('詳細エラー:', error.cause);
+        console.error('Detailed error:', error.cause);
       }
       throw error;
     }
   }
 
-  // ヘルパー関数: 16進数文字列をバイト配列に変換
+  // Helper function: Convert hex string to byte array
   private hexStringToBytes(hexString: string): number[] {
     const hex = hexString.startsWith('0x') ? hexString.slice(2) : hexString;
     const bytes: number[] = [];
@@ -1317,7 +1317,7 @@ class BidirectionalSwapVerifier {
       status: 'pending'
     };
 
-    console.log(`📦 Fusion Order作成:`);
+    console.log(`📦 Creating Fusion Order:`);
     console.log(`  🆔 Order ID: ${order.id}`);
     console.log(`  👤 Maker: ${order.maker}`);
     console.log(`  🔄 Route: ${order.sourceChain} → ${order.destinationChain}`);
@@ -1332,93 +1332,97 @@ class BidirectionalSwapVerifier {
       const blockNumber = await publicClient.getBlockNumber();
       return Number(blockNumber);
     } catch (error) {
-      console.warn('⚠️ ブロック番号取得失敗、デフォルト値を使用:', error);
+      console.warn('⚠️ Failed to get block number, using default value:', error);
       return 12345; // Default for testing
     }
   }
 
   private printSwapSummary(direction: string, sourceAmount: bigint, destAmount: bigint, orderId: string, escrowId: string): void {
-    console.log(`\n📊 ${direction} スワップ サマリー:`);
+    console.log(`\n📊 ${direction} Swap Summary:`);
     console.log(`  🆔 Order ID: ${orderId}`);
     console.log(`  📦 Escrow ID: ${escrowId}`);
     console.log(`  💰 Source: ${direction.includes('ETH →') ? formatEther(sourceAmount) + ' ETH' : sourceAmount.toString() + ' SUI'}`);
     console.log(`  💸 Destination: ${direction.includes('→ ETH') ? formatEther(destAmount) + ' ETH' : destAmount.toString() + ' SUI'}`);
-    console.log(`  ✅ Status: 成功`);
-    console.log(`  🔗 Enhanced Features: Dutch Auction, Safety Deposit, Finality Lock, Security Manager`);
+    console.log(`  ✅ Status: Success`);
+    console.log(`  �� Enhanced Features: Dutch Auction, Safety Deposit, Finality Lock, Security Manager`);
   }
 }
 
-// メイン実行関数
+// Main execution function
 async function main() {
-  console.log('🚀 1inch Fusion+ 準拠 双方向クロスチェーンスワップ検証開始');
+  console.log('🚀 Starting 1inch Fusion+ compliant bidirectional cross-chain swap verification');
   console.log('==================================================');
 
   // Enhanced verifier with 1inch Fusion+ features
   const verifier = new BidirectionalSwapVerifier(ETH_ESCROW_ADDRESS, SUI_ESCROW_PACKAGE_ID);
 
-  // コントラクトの存在確認
-  console.log('\n🔍 コントラクト存在確認中...');
+  // Check contract existence
+  console.log('\n🔍 Checking contract existence...');
   const contractExists = await verifier.verifyContractExists();
   if (!contractExists) {
-    console.error('❌ Ethereumコントラクトがデプロイされていません');
-    console.error(`アドレス: ${ETH_ESCROW_ADDRESS}`);
-    console.error('💡 解決策:');
-    console.error('1. コントラクトをデプロイしてください:');
+    console.error('❌ Ethereum contract is not deployed');
+    console.error(`Address: ${ETH_ESCROW_ADDRESS}`);
+    console.error('💡 Solution:');
+    console.error('1. Deploy the contract:');
     console.error('   cd eth-contract');
     console.error('   forge script script/DeployEscrow.s.sol --rpc-url https://sepolia.drpc.org --broadcast');
-    console.error('2. デプロイ後に取得したアドレスを更新してください');
-    console.error('3. ネットワーク接続を確認してください');
+    console.error('2. Update the address after deployment');
+    console.error('3. Check network connection');
     console.error('');
-    console.error('🔧 デプロイ手順:');
-    console.error('   # 環境変数を設定');
+    console.error('🔧 Deployment steps:');
+    console.error('   # Set environment variables');
     console.error('   export PRIVATE_KEY=0x32b7804bae76cdd15debb4f53de1013fe0a817fbcc73df6c6cafdae86d988ab4');
-    console.error('   # コントラクトをデプロイ');
+    console.error('   # Deploy contract');
     console.error('   cd eth-contract');
     console.error('   forge script script/DeployEscrow.s.sol --rpc-url https://sepolia.drpc.org --broadcast');
     return;
   }
-  console.log('✅ コントラクト存在確認完了');
+  console.log('✅ Contract existence check completed');
 
-  // Suiアカウントの初期化
-  console.log('\n🔧 Suiアカウント初期化中...');
+  // Initialize Sui account
+  console.log('\n🔧 Initializing Sui account...');
   await verifier.initializeSuiAccount();
-  console.log('✅ Suiアカウント初期化完了');
+  console.log('✅ Sui account initialization completed');
 
-  // テスト用の最適化金額（高速テスト用）
-  const testEthAmount = parseEther('0.0001'); // 0.0001 ETH - 実用的なテスト金額  
-  const testSuiAmount = BigInt(100000000); // 0.1 SUI - 実用的なテスト金額
+  // Optimized test amounts (for fast testing)
+  const testEthAmount = parseEther('0.0001'); // 0.0001 ETH - practical test amount  
+  const testSuiAmount = BigInt(100000000); // 0.1 SUI - practical test amount
 
-  // 高速化されたシーケンシャル実行
-  console.log('\n📊 高速化された双方向スワップテスト開始');
+  // Optimized sequential execution
+  console.log('\n📊 Starting optimized bidirectional swap test');
   console.log('------------------------------');
   
   try {
-    console.log('🔄 Enhanced Ethereum -> Sui スワップ検証 (1inch Fusion+)...');
+    console.log('🔄 Enhanced Ethereum -> Sui swap verification (1inch Fusion+)...');
     const ethToSuiResult = await verifier.verifyEnhancedEthToSuiSwap(testEthAmount);
     
     if (ethToSuiResult.success) {
-      console.log('✅ Enhanced Ethereum -> Sui スワップ成功 (1inch Fusion+)');
+      console.log('✅ Enhanced Ethereum -> Sui swap successful (1inch Fusion+)');
     } else {
-      console.log('❌ Enhanced Ethereum -> Sui スワップ失敗:', ethToSuiResult.error);
+      console.log('❌ Enhanced Ethereum -> Sui swap failed:', ethToSuiResult.error);
     }
 
-    // より短い待機時間（Fusion+の高速処理）
+    // Shorter wait time (Fusion+ fast processing)
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    console.log('🔄 Enhanced Sui -> Ethereum スワップ検証 (1inch Fusion+)...');
+    console.log('🔄 Enhanced Sui -> Ethereum swap verification (1inch Fusion+)...');
     const suiToEthResult = await verifier.verifyEnhancedSuiToEthSwap(testSuiAmount);
     
     if (suiToEthResult.success) {
-      console.log('✅ Enhanced Sui -> Ethereum スワップ成功 (1inch Fusion+)');
+      console.log('✅ Enhanced Sui -> Ethereum swap successful (1inch Fusion+)');
     } else {
-      console.log('❌ Enhanced Sui -> Ethereum スワップ失敗:', suiToEthResult.error);
+      console.log('❌ Enhanced Sui -> Ethereum swap failed:', suiToEthResult.error);
     }
     
-    // 結果サマリー
-    console.log('\n📊 1inch Fusion+ テスト結果サマリー:');
-    console.log(`  🔗 Enhanced Ethereum -> Sui: ${ethToSuiResult.success ? '✅ 成功' : '❌ 失敗'}`);
-    console.log(`  🔗 Enhanced Sui -> Ethereum: ${suiToEthResult.success ? '✅ 成功' : '❌ 失敗'}`);
+    // Results summary
+    console.log('\n📊 1inch Fusion+ Test Results Summary:');
+    console.log(`  🔗 Enhanced Ethereum -> Sui: ${ethToSuiResult.success ? '✅ Success' : '❌ Failed'}`);
+    console.log(`  🔗 Enhanced Sui -> Ethereum: ${suiToEthResult.success ? '✅ Success' : '❌ Failed'}`);
     console.log(`  🚀 Fusion+ Features:`);
+    console.log(`    🏁 Dutch Auction: ✅ Verified working`);
+    console.log(`    🛡️ Safety Deposit: ✅ Verified working`);
+    console.log(`    🌳 Merkle Tree Secrets: ✅ Verified working`);
+    console.log(`    ⏳ Finality Lock: ✅ Verified working`);
     console.log(`    🏁 Dutch Auction: ✅ 動作確認済み`);
     console.log(`    🛡️ Safety Deposit: ✅ 動作確認済み`);
     console.log(`    🌳 Merkle Tree Secrets: ✅ 動作確認済み`);
@@ -1427,36 +1431,36 @@ async function main() {
     console.log(`    ⛽ Gas Price Adjustment: ✅ 動作確認済み`);
     console.log(`    🔒 Security Manager: ✅ 動作確認済み`);
 
-    console.log(`🎉 1inch Fusion+ 準拠 双方向クロスチェーンスワップ検証完了!`);
-    console.log(`🔗 総合トランザクション履歴:`);
-    console.log(`  📤 ユーザー Ethereum 入金: https://sepolia.etherscan.io/address/${userAccount.address}#tokentxns`);
-    console.log(`  📤 ユーザー Sui 入金: https://suiexplorer.com/address/${SUI_ACCOUNT_ADDRESS}?network=devnet`);
-    console.log(`  📤 Resolver2 Ethereum 入金: https://sepolia.etherscan.io/address/${RESOLVER2_ADDRESS}#tokentxns`);
-    console.log(`  📤 Resolver3 Ethereum 入金: https://sepolia.etherscan.io/address/${RESOLVER3_ADDRESS}#tokentxns`);
-    console.log(`  📤 Resolver2 Sui 入金: https://suiexplorer.com/address/${SUI_RESOLVER2_ADDRESS}?network=devnet`);
-    console.log(`  📤 Resolver3 Sui 入金: https://suiexplorer.com/address/${SUI_RESOLVER3_ADDRESS}?network=devnet`);
+    console.log(`🎉 1inch Fusion+ compliant bidirectional cross-chain swap verification completed!`);
+    console.log(`🔗 Overall Transaction History:`);
+    console.log(`  📤 User Ethereum Deposit: https://sepolia.etherscan.io/address/${userAccount.address}#tokentxns`);
+    console.log(`  📤 User Sui Deposit: https://suiexplorer.com/address/${SUI_ACCOUNT_ADDRESS}?network=devnet`);
+    console.log(`  �� Resolver2 Ethereum Deposit: https://sepolia.etherscan.io/address/${RESOLVER2_ADDRESS}#tokentxns`);
+    console.log(`  �� Resolver3 Ethereum Deposit: https://sepolia.etherscan.io/address/${RESOLVER3_ADDRESS}#tokentxns`);
+    console.log(`  📤 Resolver2 Sui Deposit: https://suiexplorer.com/address/${SUI_RESOLVER2_ADDRESS}?network=devnet`);
+    console.log(`  📤 Resolver3 Sui Deposit: https://suiexplorer.com/address/${SUI_RESOLVER3_ADDRESS}?network=devnet`);
     
   } catch (error) {
-    console.error('❌ テスト実行エラー:', error);
+    console.error('❌ Test execution error:', error);
     
-    // 詳細なエラー情報を表示
+    // Display detailed error information
     if (error && typeof error === 'object' && 'cause' in error) {
-      console.error('詳細エラー:', error.cause);
+      console.error('Detailed error:', error.cause);
     }
     
-    // アカウント情報を表示
-    console.error('🔍 デバッグ情報:');
-    console.error(`  - ユーザーアドレス: ${userAccount.address}`);
-    console.error(`  - コントラクトアドレス: ${ETH_ESCROW_ADDRESS}`);
-    console.error(`  - ネットワーク: Sepolia Testnet`);
+    // Display account information
+    console.error('🔍 Debug information:');
+    console.error(`  - User address: ${userAccount.address}`);
+    console.error(`  - Contract address: ${ETH_ESCROW_ADDRESS}`);
+    console.error(`  - Network: Sepolia Testnet`);
     
-    // 解決策を提示
-    console.error('💡 解決策:');
-    console.error('1. SepoliaテストネットのETH残高を確認してください');
-    console.error('2. コントラクトが正しくデプロイされているか確認してください');
-    console.error('3. ネットワーク接続を確認してください');
+    // Provide solutions
+    console.error('💡 Solutions:');
+    console.error('1. Check ETH balance on Sepolia testnet');
+    console.error('2. Verify that the contract is properly deployed');
+    console.error('3. Check network connection');
   }
 }
 
-// スクリプト実行
+// Script execution
 main().catch(console.error); 

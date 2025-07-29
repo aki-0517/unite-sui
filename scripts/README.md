@@ -1,335 +1,335 @@
-# 双方向クロスチェーンスワップ検証スクリプト
+# Bidirectional Cross-Chain Swap Verification Script
 
-このスクリプトは、Ethereum Sepolia と Sui testnet 間の双方向クロスチェーンスワップの動作を検証します。
+This script verifies the operation of bidirectional cross-chain swaps between Ethereum Sepolia and Sui testnet.
 
-## 機能
+## Features
 
-- **Ethereum -> Sui スワップ検証**: Sepolia から Sui への資産移動
-- **Sui -> Ethereum スワップ検証**: Sui から Sepolia への資産移動
-- **ハッシュロック機能**: セキュアな原子スワップの実装
-- **タイムロック機能**: 期限切れ時の自動返金
-- **部分フィル機能**: 大きなスワップの効率的な実行
+- **Ethereum -> Sui Swap Verification**: Asset movement from Sepolia to Sui
+- **Sui -> Ethereum Swap Verification**: Asset movement from Sui to Sepolia
+- **Hash Lock Feature**: Implementation of secure atomic swaps
+- **Time Lock Feature**: Automatic refund upon expiration
+- **Partial Fill Feature**: Efficient execution of large swaps
 
-## 前提条件
+## Prerequisites
 
-### 必要なソフトウェア
-1. **Node.js** (v18以上)
-   - [Node.js公式サイト](https://nodejs.org/)からダウンロード
-   - インストール確認: `node --version`
+### Required Software
+1. **Node.js** (v18 or higher)
+   - Download from [Node.js Official Site](https://nodejs.org/)
+   - Installation check: `node --version`
 
-2. **Git** (リポジトリのクローン用)
-   - [Git公式サイト](https://git-scm.com/)からダウンロード
-   - インストール確認: `git --version`
+2. **Git** (for repository cloning)
+   - Download from [Git Official Site](https://git-scm.com/)
+   - Installation check: `git --version`
 
-### 必要なアカウントとウォレット
-1. **Sepolia テストネットウォレット**
-   - MetaMaskなどのウォレットでSepoliaテストネットを追加
-   - Sepolia ETHを取得: [Sepolia Faucet](https://sepoliafaucet.com/)
+### Required Accounts and Wallets
+1. **Sepolia Testnet Wallet**
+   - Add Sepolia testnet to wallet like MetaMask
+   - Get Sepolia ETH: [Sepolia Faucet](https://sepoliafaucet.com/)
 
-2. **Sui テストネットウォレット**
-   - Sui Walletをインストール: [Sui Wallet](https://chrome.google.com/webstore/detail/sui-wallet/opcgpfmipidbgpenhmajoajpbobppdil)
-   - Suiテストネットに切り替え
-   - テストネットSUIを取得: [Sui Faucet](https://discord.gg/sui)
+2. **Sui Testnet Wallet**
+   - Install Sui Wallet: [Sui Wallet](https://chrome.google.com/webstore/detail/sui-wallet/opcgpfmipidbgpenhmajoajpbobppdil)
+   - Switch to Sui testnet
+   - Get testnet SUI: [Sui Faucet](https://discord.gg/sui)
 
-### 必要な環境変数設定
-- `.env.local` ファイルに秘密鍵を設定（詳細は下記）
+### Required Environment Variable Setup
+- Configure private keys in `.env.local` file (details below)
 
-### コントラクトデプロイ
-- Ethereum と Sui のエスクローコントラクトがデプロイ済みであること
+### Contract Deployment
+- Ethereum and Sui escrow contracts must be deployed
 
-## セットアップ
+## Setup
 
-### 1. 依存関係のインストール
+### 1. Install Dependencies
 
 ```bash
 cd scripts
 npm install
 ```
 
-### 2. 環境変数の設定
+### 2. Environment Variable Configuration
 
-`.env.local` ファイルを作成し、以下の変数を設定してください：
+Create a `.env.local` file and set the following variables:
 
 ```env
-# ユーザーウォレットの秘密鍵
+# User wallet private keys
 VITE_SEPOLIA_USER_PRIVATE_KEY=0x...
 VITE_SUI_USER_PRIVETE_KEY=base64_encoded_private_key
 
-# Resolver ウォレットの秘密鍵
+# Resolver wallet private keys
 VITE_RESOLVER_PRIVATE_KEY=0x...
 
-# コントラクトアドレス（デプロイ後に更新）
+# Contract addresses (update after deployment)
 ETH_ESCROW_ADDRESS=0x...
 SUI_ESCROW_PACKAGE_ID=0x...
 SUI_USED_SECRETS_REGISTRY_ID=0x...
 ```
 
-### 3. コントラクトアドレスの更新
+### 3. Update Contract Addresses
 
-`scripts/verify-bidirectional-swap.ts` ファイル内の以下の定数を実際のデプロイされたアドレスに更新してください：
+Update the following constants in the `scripts/verify-bidirectional-swap.ts` file with the actual deployed addresses:
 
 ```typescript
-const ETH_ESCROW_ADDRESS = '0x...'; // 実際のEthereumエスクローアドレス
-const SUI_ESCROW_PACKAGE_ID = '0x...'; // 実際のSuiパッケージID
-const SUI_USED_SECRETS_REGISTRY_ID = '0x...'; // 実際のレジストリID
+const ETH_ESCROW_ADDRESS = '0x...'; // Actual Ethereum escrow address
+const SUI_ESCROW_PACKAGE_ID = '0x...'; // Actual Sui package ID
+const SUI_USED_SECRETS_REGISTRY_ID = '0x...'; // Actual registry ID
 ```
 
-## 使用方法
+## Usage
 
-### 1. 初回セットアップ
+### 1. Initial Setup
 
-#### 1.1 ディレクトリに移動
+#### 1.1 Navigate to Directory
 ```bash
 cd scripts
 ```
 
-#### 1.2 依存関係をインストール
+#### 1.2 Install Dependencies
 ```bash
 npm install
 ```
 
-#### 1.3 環境変数ファイルを作成
+#### 1.3 Create Environment Variables File
 ```bash
-# .env.local ファイルを作成
+# Create .env.local file
 touch .env.local
 ```
 
-#### 1.4 環境変数を設定
-`.env.local` ファイルを開いて、以下の内容を追加してください：
+#### 1.4 Set Environment Variables
+Open the `.env.local` file and add the following content:
 
 ```env
-# ユーザーウォレットの秘密鍵（必ず設定してください）
+# User wallet private keys (must be set)
 VITE_SEPOLIA_USER_PRIVATE_KEY=0x1234567890abcdef...
 VITE_SUI_USER_PRIVETE_KEY=base64_encoded_private_key_here
 
-# Resolver ウォレットの秘密鍵（必ず設定してください）
+# Resolver wallet private keys (must be set)
 VITE_RESOLVER_PRIVATE_KEY=0xabcdef1234567890...
 ```
 
-**注意**: 
-- 秘密鍵は必ず `0x` で始まる形式で入力してください
-- Sui の秘密鍵は base64 エンコードされた形式で入力してください
-- これらの秘密鍵は安全に管理し、公開しないでください
+**Important Notes**: 
+- Private keys must be entered in the format starting with `0x`
+- Sui private keys should be entered in base64 encoded format
+- Keep these private keys secure and do not make them public
 
-### 2. スクリプトの実行
+### 2. Running the Script
 
-#### 2.1 基本的な実行（推奨）
+#### 2.1 Basic Execution (Recommended)
 ```bash
 npm run test
 ```
 
-#### 2.2 開発モードでの実行
+#### 2.2 Development Mode Execution
 ```bash
 npm run dev
 ```
 
-#### 2.3 直接実行（上級者向け）
+#### 2.3 Direct Execution (Advanced)
 ```bash
 npx tsx verify-bidirectional-swap.ts
 ```
 
-### 3. 実行結果の確認
+### 3. Verify Execution Results
 
-正常に実行されると、以下のようなログが表示されます：
+When executed successfully, the following logs will be displayed:
 
 ```
-🚀 双方向クロスチェーンスワップ検証開始
+🚀 Bidirectional cross-chain swap verification started
 ==================================================
 
-📊 Ethereum -> Sui スワップ検証
+📊 Ethereum -> Sui swap verification
 ------------------------------
-🔍 Ethereum -> Sui スワップ検証開始...
-📝 シークレット生成: 0x...
-🔒 ハッシュロック生成: 0x...
-⏰ タイムロック設定: 1234567890
-📦 Ethereum エスクロー作成: 0x...
-✅ Ethereum エスクロー フィル完了
-📦 Sui エスクロー作成: 0x...
-✅ Sui エスクロー フィル完了
-✅ Ethereum -> Sui スワップ検証成功
+🔍 Starting Ethereum -> Sui swap verification...
+📝 Secret generation: 0x...
+🔒 Hash lock generation: 0x...
+⏰ Time lock setting: 1234567890
+📦 Ethereum escrow creation: 0x...
+✅ Ethereum escrow fill completed
+📦 Sui escrow creation: 0x...
+✅ Sui escrow fill completed
+✅ Ethereum -> Sui swap verification successful
 
-📊 Sui -> Ethereum スワップ検証
+📊 Sui -> Ethereum swap verification
 ------------------------------
-🔍 Sui -> Ethereum スワップ検証開始...
+🔍 Starting Sui -> Ethereum swap verification...
 ...
-✅ Sui -> Ethereum スワップ検証成功
+✅ Sui -> Ethereum swap verification successful
 
-🎉 双方向クロスチェーンスワップ検証完了
+🎉 Bidirectional cross-chain swap verification completed
 ```
 
-### 4. よくあるエラーと対処法
+### 4. Common Errors and Solutions
 
-#### 4.1 環境変数エラー
+#### 4.1 Environment Variable Error
 ```
-Error: 必要な環境変数が設定されていません
+Error: Required environment variables are not set
 ```
-**対処法**: `.env.local` ファイルが正しく設定されているか確認してください
+**Solution**: Verify that the `.env.local` file is properly configured
 
-#### 4.2 ネットワークエラー
+#### 4.2 Network Error
 ```
 Error: Failed to fetch
 ```
-**対処法**: インターネット接続を確認し、RPC URLが正しいか確認してください
+**Solution**: Check internet connection and verify that the RPC URL is correct
 
-#### 4.3 ガス代不足エラー
+#### 4.3 Insufficient Gas Error
 ```
 Error: insufficient funds
 ```
-**対処法**: ウォレットに十分なガス代があるか確認してください
+**Solution**: Verify that the wallet has sufficient gas fees
 
-### 5. テスト金額の確認
+### 5. Test Amount Verification
 
-現在のテスト金額：
-- **Ethereum -> Sui**: 0.00001 ETH（約 $0.00002）
-- **Sui -> Ethereum**: 0.01 SUI（約 $0.01）
+Current test amounts:
+- **Ethereum -> Sui**: 0.00001 ETH (approximately $0.00002)
+- **Sui -> Ethereum**: 0.01 SUI (approximately $0.01)
 
-これらの金額は `verify-bidirectional-swap.ts` ファイル内で変更可能です。
+These amounts can be changed within the `verify-bidirectional-swap.ts` file.
 
-## 検証フロー
+## Verification Flow
 
-### Ethereum -> Sui スワップ
+### Ethereum -> Sui Swap
 
-1. **シークレット生成**: 32バイトのランダムシークレットを生成
-2. **ハッシュロック作成**: シークレットからハッシュロックを生成
-3. **Ethereum エスクロー作成**: Sepolia でエスクローを作成
-4. **Resolver フィル**: Resolver がエスクローをフィル
-5. **Sui エスクロー作成**: Sui で対応するエスクローを作成
-6. **Sui エスクロー フィル**: シークレットを使用してSuiエスクローをフィル
+1. **Secret Generation**: Generate a 32-byte random secret
+2. **Hash Lock Creation**: Generate hash lock from secret
+3. **Ethereum Escrow Creation**: Create escrow on Sepolia
+4. **Resolver Fill**: Resolver fills the escrow
+5. **Sui Escrow Creation**: Create corresponding escrow on Sui
+6. **Sui Escrow Fill**: Fill Sui escrow using the secret
 
-### Sui -> Ethereum スワップ
+### Sui -> Ethereum Swap
 
-1. **シークレット生成**: 32バイトのランダムシークレットを生成
-2. **ハッシュロック作成**: シークレットからハッシュロックを生成
-3. **Sui エスクロー作成**: Sui でエスクローを作成
-4. **Sui エスクロー フィル**: シークレットを使用してSuiエスクローをフィル
-5. **Ethereum エスクロー作成**: Sepolia で対応するエスクローを作成
-6. **Resolver フィル**: Resolver がEthereumエスクローをフィル
+1. **Secret Generation**: Generate a 32-byte random secret
+2. **Hash Lock Creation**: Generate hash lock from secret
+3. **Sui Escrow Creation**: Create escrow on Sui
+4. **Sui Escrow Fill**: Fill Sui escrow using the secret
+5. **Ethereum Escrow Creation**: Create corresponding escrow on Sepolia
+6. **Resolver Fill**: Resolver fills the Ethereum escrow
 
-## レート設定
+## Rate Settings
 
-現在のレート設定：
+Current rate settings:
 - **1 SUI = 0.001 ETH**
 - **1 ETH = 1000 SUI**
 
-テスト金額設定：
+Test amount settings:
 - **Ethereum -> Sui**: 0.00001 ETH
 - **Sui -> Ethereum**: 0.01 SUI
 
-これらのレートは `scripts/verify-bidirectional-swap.ts` 内で変更可能です：
+These rates can be changed in `scripts/verify-bidirectional-swap.ts`:
 
 ```typescript
 const ETH_TO_SUI_RATE = 0.001; // 1 SUI = 0.001 ETH
 const SUI_TO_ETH_RATE = 1000; // 1 ETH = 1000 SUI
 
-// テスト用の金額
+// Test amounts
 const testEthAmount = parseEther('0.00001'); // 0.00001 ETH (eth->sui)
 const testSuiAmount = BigInt(10000000); // 0.01 SUI (sui->eth) (1e7)
 ```
 
-## エラーハンドリング
+## Error Handling
 
-スクリプトは以下のエラーを適切に処理します：
+The script properly handles the following errors:
 
-- **環境変数不足**: 必要な秘密鍵が設定されていない場合
-- **ネットワークエラー**: RPC接続の問題
-- **コントラクトエラー**: トランザクション実行の失敗
-- **バリデーションエラー**: 無効なパラメータ
+- **Missing Environment Variables**: When required private keys are not set
+- **Network Errors**: RPC connection issues
+- **Contract Errors**: Transaction execution failures
+- **Validation Errors**: Invalid parameters
 
-## ログ出力
+## Log Output
 
-スクリプトは詳細なログを出力し、各ステップの進行状況を追跡できます：
+The script outputs detailed logs, allowing you to track the progress of each step:
 
 ```
-🚀 双方向クロスチェーンスワップ検証開始
+🚀 Bidirectional cross-chain swap verification started
 ==================================================
 
-📊 Ethereum -> Sui スワップ検証
+📊 Ethereum -> Sui swap verification
 ------------------------------
-🔍 Ethereum -> Sui スワップ検証開始...
-📝 シークレット生成: 0x...
-🔒 ハッシュロック生成: 0x...
-⏰ タイムロック設定: 1234567890
-📦 Ethereum エスクロー作成: 0x...
-✅ Ethereum エスクロー フィル完了
-📦 Sui エスクロー作成: 0x...
-✅ Sui エスクロー フィル完了
-✅ Ethereum -> Sui スワップ検証成功
+🔍 Starting Ethereum -> Sui swap verification...
+📝 Secret generation: 0x...
+🔒 Hash lock generation: 0x...
+⏰ Time lock setting: 1234567890
+📦 Ethereum escrow creation: 0x...
+✅ Ethereum escrow fill completed
+📦 Sui escrow creation: 0x...
+✅ Sui escrow fill completed
+✅ Ethereum -> Sui swap verification successful
 ```
 
-## トラブルシューティング
+## Troubleshooting
 
-### よくある問題と対処法
+### Common Issues and Solutions
 
-#### 1. 環境変数エラー
-**症状**: `Error: 必要な環境変数が設定されていません`
-**対処法**:
-- `.env.local` ファイルが存在するか確認: `ls -la .env.local`
-- ファイルの内容を確認: `cat .env.local`
-- 秘密鍵が正しい形式か確認（0xで始まる）
+#### 1. Environment Variable Error
+**Symptoms**: `Error: Required environment variables are not set`
+**Solutions**:
+- Check if `.env.local` file exists: `ls -la .env.local`
+- Check file contents: `cat .env.local`
+- Verify private keys are in correct format (starting with 0x)
 
-#### 2. ネットワークエラー
-**症状**: `Error: Failed to fetch` または `Network error`
-**対処法**:
-- インターネット接続を確認
-- ファイアウォールの設定を確認
-- VPNを使用している場合は一時的に無効化
+#### 2. Network Error
+**Symptoms**: `Error: Failed to fetch` or `Network error`
+**Solutions**:
+- Check internet connection
+- Check firewall settings
+- Temporarily disable VPN if using one
 
-#### 3. コントラクトエラー
-**症状**: `Error: Contract not found` または `Transaction failed`
-**対処法**:
-- コントラクトが正しくデプロイされているか確認
-- コントラクトアドレスが正しいか確認
-- テストネットが正しく設定されているか確認
+#### 3. Contract Error
+**Symptoms**: `Error: Contract not found` or `Transaction failed`
+**Solutions**:
+- Verify contract is properly deployed
+- Check contract address is correct
+- Ensure testnet is properly configured
 
-#### 4. ガス代不足
-**症状**: `Error: insufficient funds` または `Out of gas`
-**対処法**:
-- Sepolia ETHの残高を確認: [Sepolia Etherscan](https://sepolia.etherscan.io/)
-- Sui テストネットSUIの残高を確認
-- 必要に応じてファウセットから取得
+#### 4. Insufficient Gas
+**Symptoms**: `Error: insufficient funds` or `Out of gas`
+**Solutions**:
+- Check Sepolia ETH balance: [Sepolia Etherscan](https://sepolia.etherscan.io/)
+- Check Sui testnet SUI balance
+- Get tokens from faucet if needed
 
-#### 5. 権限エラー
-**症状**: `Error: Permission denied` または `Access denied`
-**対処法**:
-- ファイルの権限を確認: `ls -la`
-- 必要に応じて権限を変更: `chmod 644 .env.local`
+#### 5. Permission Error
+**Symptoms**: `Error: Permission denied` or `Access denied`
+**Solutions**:
+- Check file permissions: `ls -la`
+- Change permissions if needed: `chmod 644 .env.local`
 
-#### 6. Node.js バージョンエラー
-**症状**: `Error: Unsupported Node.js version`
-**対処法**:
-- Node.js バージョンを確認: `node --version`
-- 必要に応じて Node.js をアップデート
+#### 6. Node.js Version Error
+**Symptoms**: `Error: Unsupported Node.js version`
+**Solutions**:
+- Check Node.js version: `node --version`
+- Update Node.js if needed
 
-### デバッグモードでの実行
+### Running in Debug Mode
 
-詳細なログを確認したい場合：
+To see detailed logs:
 
 ```bash
-# デバッグ情報を表示
+# Display debug information
 DEBUG=* npm run test
 
-# または直接実行
+# Or run directly
 DEBUG=* npx tsx verify-bidirectional-swap.ts
 ```
 
-### ログファイルの確認
+### Checking Log Files
 
-エラーが発生した場合、ログファイルを確認してください：
+If errors occur, check the log files:
 
 ```bash
-# ログファイルを作成して実行
+# Create log file and run
 npm run test > log.txt 2>&1
 
-# ログファイルを確認
+# Check log file
 cat log.txt
 ```
 
-## セキュリティ注意事項
+## Security Notes
 
-- **秘密鍵の管理**: 秘密鍵は安全に管理し、公開リポジトリにコミットしないでください
-- **テストネット使用**: 本番環境ではなく、テストネットでのみ実行してください
-- **小額テスト**: 最初は小額でテストしてから、大きな金額でテストしてください
+- **Private Key Management**: Keep private keys secure and do not commit them to public repositories
+- **Testnet Usage**: Only run on testnets, not on production environments
+- **Small Amount Testing**: Start with small amounts before testing with larger amounts
 
-## ライセンス
+## License
 
 MIT License 
