@@ -6,6 +6,7 @@ import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
 /**
  * @title IEthereumEscrow
  * @dev Interface for Ethereum escrow contract used in cross-chain atomic swaps
+ * All ETH operations are wrapped through WETH for consistency and security
  */
 interface IEthereumEscrow {
     // Events
@@ -16,7 +17,8 @@ interface IEthereumEscrow {
         uint256 amount,
         bytes32 hashLock,
         uint256 timeLock,
-        string suiOrderHash
+        string suiOrderHash,
+        bool isWeth
     );
     
     event EscrowPartiallyFilled(
@@ -33,17 +35,6 @@ interface IEthereumEscrow {
         address indexed lastResolver,
         bytes32 secret,
         string suiOrderHash
-    );
-    
-    event EscrowCreatedWithWeth(
-        bytes32 indexed escrowId,
-        address indexed maker,
-        address indexed taker,
-        uint256 amount,
-        bytes32 hashLock,
-        uint256 timeLock,
-        string suiOrderHash,
-        bool isWeth
     );
     
     event EscrowRefunded(
@@ -74,21 +65,8 @@ interface IEthereumEscrow {
     error WethTransferFailed();
     error InsufficientWethAllowance();
 
-    // Core functions
+    // Core functions - WETH only
     function createEscrow(
-        bytes32 hashLock,
-        uint256 timeLock,
-        address payable taker,
-        string calldata suiOrderHash
-    ) external payable returns (bytes32 escrowId);
-
-    function fillEscrow(
-        bytes32 escrowId,
-        uint256 amount,
-        bytes32 secret
-    ) external;
-    
-    function createEscrowWithWeth(
         bytes32 hashLock,
         uint256 timeLock,
         address payable taker,
@@ -96,7 +74,7 @@ interface IEthereumEscrow {
         uint256 wethAmount
     ) external returns (bytes32 escrowId);
 
-    function fillEscrowWithWeth(
+    function fillEscrow(
         bytes32 escrowId,
         uint256 amount,
         bytes32 secret
@@ -128,20 +106,6 @@ interface IEthereumEscrow {
         bool refunded,
         uint256 createdAt,
         string memory suiOrderHash
-    );
-
-    function getEscrowWithWethInfo(bytes32 escrowId) external view returns (
-        address maker,
-        address taker,
-        uint256 totalAmount,
-        uint256 remainingAmount,
-        bytes32 hashLock,
-        uint256 timeLock,
-        bool completed,
-        bool refunded,
-        uint256 createdAt,
-        string memory suiOrderHash,
-        bool isWeth
     );
     
     function getRemainingAmount(bytes32 escrowId) external view returns (uint256);

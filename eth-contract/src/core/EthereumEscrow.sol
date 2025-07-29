@@ -12,6 +12,7 @@ import {TimeLock} from "../utils/TimeLock.sol";
  * @title EthereumEscrow
  * @dev Cross-chain escrow contract for Ethereum side of atomic swaps
  * Uses Hash-Time Lock Contract (HTLC) pattern for secure atomic swaps
+ * All ETH operations are wrapped through WETH for consistency and security
  */
 contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
     using SafeERC20 for IERC20;
@@ -32,7 +33,6 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
         uint256 createdAt;
         string suiOrderHash;
         bytes32 secret; // Revealed secret stored after completion
-        bool isWeth; // New field to track if this is a WETH escrow
     }
 
     // State variables
@@ -47,66 +47,7 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
     // Events and errors are inherited from IEthereumEscrow interface
 
     /**
-     * @dev Creates a new escrow with Hash-Time Lock
-     * @param hashLock Hash of the secret (SHA3-256)
-     * @param timeLock Unix timestamp when the escrow expires
-     * @param taker Address that can claim the escrow
-     * @param suiOrderHash Reference to the corresponding Sui order
-     * @return escrowId Unique identifier for the escrow
-     */
-    function createEscrow(
-        bytes32 hashLock,
-        uint256 timeLock,
-        address payable taker,
-        string calldata suiOrderHash
-    ) external payable nonReentrant returns (bytes32 escrowId) {
-        if (msg.value == 0) revert InvalidAmount();
-        if (!TimeLock.isValidTimeLock(timeLock)) revert InvalidTimeLock();
-        // taker can be address(0) to allow any resolver to fill
-        
-        // Generate unique escrow ID
-        escrowId = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                taker,
-                msg.value,
-                hashLock,
-                timeLock,
-                block.timestamp,
-                block.number
-            )
-        );
-        
-        if (escrows[escrowId].maker != address(0)) revert EscrowAlreadyExists();
-        
-        escrows[escrowId] = Escrow({
-            maker: payable(msg.sender),
-            taker: taker,
-            totalAmount: msg.value,
-            remainingAmount: msg.value,
-            hashLock: hashLock,
-            timeLock: timeLock,
-            completed: false,
-            refunded: false,
-            createdAt: block.timestamp,
-            suiOrderHash: suiOrderHash,
-            secret: bytes32(0),
-            isWeth: false // ETH escrow
-        });
-        
-        emit EscrowCreated(
-            escrowId,
-            msg.sender,
-            taker,
-            msg.value,
-            hashLock,
-            timeLock,
-            suiOrderHash
-        );
-    }
-
-    /**
-     * @dev Creates a new escrow with WETH instead of ETH
+     * @dev Creates a new escrow with WETH (ETH must be wrapped first)
      * @param hashLock Hash of the secret (SHA3-256)
      * @param timeLock Unix timestamp when the escrow expires
      * @param taker Address that can claim the escrow
@@ -114,7 +55,7 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
      * @param wethAmount Amount of WETH to escrow
      * @return escrowId Unique identifier for the escrow
      */
-    function createEscrowWithWeth(
+    function createEscrow(
         bytes32 hashLock,
         uint256 timeLock,
         address payable taker,
@@ -158,11 +99,10 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
             refunded: false,
             createdAt: block.timestamp,
             suiOrderHash: suiOrderHash,
-            secret: bytes32(0),
-            isWeth: true // WETH escrow
+            secret: bytes32(0)
         });
         
-        emit EscrowCreatedWithWeth(
+        emit EscrowCreated(
             escrowId,
             msg.sender,
             taker,
@@ -170,12 +110,12 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
             hashLock,
             timeLock,
             suiOrderHash,
-            true
+            true // isWeth
         );
     }
 
     /**
-     * @dev Fills the escrow partially with a specific amount
+     * @dev Fills the escrow partially with a specific amount (WETH only)
      * @param escrowId The escrow identifier
      * @param amount The amount to fill (must be <= remainingAmount)
      * @param secret The secret that matches the hash lock
@@ -188,69 +128,6 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
         Escrow storage escrow = escrows[escrowId];
         
         if (escrow.maker == address(0)) revert EscrowNotFound();
-        if (escrow.taker != address(0) && msg.sender != escrow.taker) revert OnlyTaker();
-        if (escrow.completed) revert EscrowAlreadyCompleted();
-        if (escrow.refunded) revert EscrowAlreadyRefunded();
-        if (TimeLock.isExpired(escrow.timeLock)) revert EscrowExpired();
-        if (amount == 0) revert InvalidFillAmount();
-        if (amount > escrow.remainingAmount) revert InsufficientRemainingAmount();
-        
-        // Verify the secret matches the hash lock
-        if (!HashLock.verifySecret(secret, escrow.hashLock)) revert InvalidSecret();
-        
-        // Check secret usage
-        if (escrow.secret == bytes32(0)) {
-            // First fill - check if secret was used in other escrows
-            if (usedSecrets[secret]) revert SecretAlreadyUsed();
-            escrow.secret = secret;
-            usedSecrets[secret] = true;
-        } else {
-            // Subsequent fills - must use same secret as first fill
-            if (escrow.secret != secret) revert InvalidSecret();
-        }
-        
-        // Update remaining amount
-        escrow.remainingAmount -= amount;
-        
-        // Check if this completes the escrow
-        bool isCompleted = escrow.remainingAmount == 0;
-        if (isCompleted) {
-            escrow.completed = true;
-        }
-        
-        // Transfer funds to resolver
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        if (!success) revert TransferFailed();
-        
-        if (isCompleted) {
-            emit EscrowCompleted(escrowId, msg.sender, secret, escrow.suiOrderHash);
-        } else {
-            emit EscrowPartiallyFilled(
-                escrowId, 
-                msg.sender, 
-                amount, 
-                escrow.remainingAmount, 
-                secret, 
-                escrow.suiOrderHash
-            );
-        }
-    }
-
-    /**
-     * @dev Fills the WETH escrow partially with a specific amount
-     * @param escrowId The escrow identifier
-     * @param amount The amount to fill (must be <= remainingAmount)
-     * @param secret The secret that matches the hash lock
-     */
-    function fillEscrowWithWeth(
-        bytes32 escrowId,
-        uint256 amount,
-        bytes32 secret
-    ) external nonReentrant {
-        Escrow storage escrow = escrows[escrowId];
-        
-        if (escrow.maker == address(0)) revert EscrowNotFound();
-        if (!escrow.isWeth) revert InvalidWethAmount(); // Only WETH escrows
         if (escrow.taker != address(0) && msg.sender != escrow.taker) revert OnlyTaker();
         if (escrow.completed) revert EscrowAlreadyCompleted();
         if (escrow.refunded) revert EscrowAlreadyRefunded();
@@ -336,9 +213,8 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
         escrow.completed = true;
         escrow.remainingAmount = 0;
         
-        // Transfer funds to resolver
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        if (!success) revert TransferFailed();
+        // Transfer WETH to resolver
+        weth.safeTransfer(msg.sender, amount);
         
         emit EscrowCompleted(escrowId, msg.sender, secret, escrow.suiOrderHash);
     }
@@ -361,14 +237,8 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
         uint256 amount = escrow.remainingAmount;
         escrow.remainingAmount = 0;
         
-        if (escrow.isWeth) {
-            // WETH refund
-            weth.safeTransfer(escrow.maker, amount);
-        } else {
-            // ETH refund
-            (bool success, ) = escrow.maker.call{value: amount}("");
-            if (!success) revert TransferFailed();
-        }
+        // WETH refund
+        weth.safeTransfer(escrow.maker, amount);
         
         emit EscrowRefunded(escrowId, escrow.maker, amount, escrow.suiOrderHash);
     }
@@ -396,18 +266,8 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
     }
 
     /**
-     * @dev Gets escrow information
+     * @dev Gets escrow information (WETH only)
      * @param escrowId The escrow identifier
-     * @return maker The maker address
-     * @return taker The taker address
-     * @return totalAmount The total escrow amount
-     * @return remainingAmount The remaining amount to be filled
-     * @return hashLock The hash lock
-     * @return timeLock The time lock
-     * @return completed Whether the escrow is completed
-     * @return refunded Whether the escrow is refunded
-     * @return createdAt The creation timestamp
-     * @return suiOrderHash The Sui order hash
      */
     function getEscrow(bytes32 escrowId) external view returns (
         address maker,
@@ -433,39 +293,6 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
             escrow.refunded,
             escrow.createdAt,
             escrow.suiOrderHash
-        );
-    }
-
-    /**
-     * @dev Gets escrow information with WETH support
-     * @param escrowId The escrow identifier
-     */
-    function getEscrowWithWethInfo(bytes32 escrowId) external view returns (
-        address maker,
-        address taker,
-        uint256 totalAmount,
-        uint256 remainingAmount,
-        bytes32 hashLock,
-        uint256 timeLock,
-        bool completed,
-        bool refunded,
-        uint256 createdAt,
-        string memory suiOrderHash,
-        bool isWeth
-    ) {
-        Escrow memory escrow = escrows[escrowId];
-        return (
-            escrow.maker,
-            escrow.taker,
-            escrow.totalAmount,
-            escrow.remainingAmount,
-            escrow.hashLock,
-            escrow.timeLock,
-            escrow.completed,
-            escrow.refunded,
-            escrow.createdAt,
-            escrow.suiOrderHash,
-            escrow.isWeth
         );
     }
 
