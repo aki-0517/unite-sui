@@ -225,7 +225,6 @@ function App() {
             </div>
 
             <div className="history-section">
-              <h4>📊 Sui → Sepolia Swap:</h4>
               {transactionHistory.suiSentTxHashes.length > 0 && (
                 <div className="tx-group">
                   <p><strong>📤 User Sui Out (sent):</strong></p>
@@ -252,10 +251,6 @@ function App() {
                 </div>
               )}
             </div>
-
-            <p className="history-note">
-              💡 Note: These links show the actual transaction hashes for amounts sent and received by the user wallets
-            </p>
           </div>
         )}
       </main>
