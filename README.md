@@ -49,12 +49,6 @@ This project implements Hash-Time Lock Contract (HTLC) pattern for secure atomic
 4. **Cross-chain & Secret Reveal**: Secret revealed on one chain unlocks funds on the other; verification is on-chain.
 5. **Completion & Refund**: Correct secret transfers assets; after expiry, refunds are possible; resolver misbehavior is penalized.
 
-#### Design Notes
-
-- Off-chain relayers monitor both chains and relay secrets.
-- Resolver safety: KYC/KYB, staking, reputation.
-- All 1inch Fusion+ features (intent, auction, HTLC, partial fill, recovery, resolver network, security) are covered within smart contract scope.
-
 
 ### Cross-Chain Swap Flow
 
