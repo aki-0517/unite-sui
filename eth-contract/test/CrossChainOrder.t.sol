@@ -57,30 +57,26 @@ contract CrossChainOrderTest is Test {
         // Deploy contracts in correct order
         escrow = new EthereumEscrow(address(weth));
         
-        // Deploy LimitOrderProtocol first with temporary addresses
-        address tempAddr = address(0x999);
+        // Calculate the future addresses (this is just an approximation)
+        uint256 nonce = vm.getNonce(address(this));
+        address futureAuction = vm.computeCreateAddress(address(this), nonce + 1);
+        address futureResolver = vm.computeCreateAddress(address(this), nonce + 2);
+        
+        // Deploy LimitOrderProtocol with predicted addresses
         limitOrder = new LimitOrderProtocol(
             address(weth),
-            tempAddr, // temporary
-            tempAddr, // temporary
+            futureAuction,
+            futureResolver,
             address(escrow)
         );
         
-        // Deploy dependent contracts
+        // Now deploy the dependent contracts (these should match the predicted addresses)
         dutchAuction = new DutchAuction(address(limitOrder));
         resolverNetwork = new ResolverNetwork(address(limitOrder), address(weth), admin);
         
-        // Now deploy final LimitOrderProtocol with correct addresses
-        limitOrder = new LimitOrderProtocol(
-            address(weth),
-            address(dutchAuction),
-            address(resolverNetwork),
-            address(escrow)
-        );
-        
-        // Redeploy dependent contracts with final LimitOrderProtocol address
-        dutchAuction = new DutchAuction(address(limitOrder));
-        resolverNetwork = new ResolverNetwork(address(limitOrder), address(weth), admin);
+        // Verify addresses match
+        require(address(dutchAuction) == futureAuction, "DutchAuction address mismatch");
+        require(address(resolverNetwork) == futureResolver, "ResolverNetwork address mismatch");
         
         crossChainOrder = new CrossChainOrder(
             address(limitOrder),

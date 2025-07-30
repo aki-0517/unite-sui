@@ -237,9 +237,10 @@ contract LimitOrderProtocolTest is Test {
         vm.prank(resolver1);
         limitOrder.fillLimitOrder(orderHash, secret);
         
-        // Verify resolver received tokens based on current rate
+        // Verify resolver received tokens (should be the actual source amount, not rate-adjusted)
         uint256 currentRate = limitOrder.getCurrentRate(orderHash);
-        uint256 expectedFillAmount = (sourceAmount * currentRate) / 1e18;
+        uint256 calculatedFillAmount = (sourceAmount * currentRate) / 1e18;
+        uint256 expectedFillAmount = calculatedFillAmount > sourceAmount ? sourceAmount : calculatedFillAmount;
         
         assertEq(weth.balanceOf(resolver1), initialBalance + expectedFillAmount);
         
@@ -381,8 +382,9 @@ contract LimitOrderProtocolTest is Test {
         limitOrder.fillLimitOrder(orderHash, secret);
         
         uint256 currentRate = limitOrder.getCurrentRate(orderHash);
-        uint256 fillAmount = (sourceAmount * currentRate) / 1e18;
-        assertEq(limitOrder.getRemainingAmount(orderHash), sourceAmount - fillAmount);
+        uint256 calculatedFillAmount = (sourceAmount * currentRate) / 1e18;
+        uint256 actualFillAmount = calculatedFillAmount > sourceAmount ? sourceAmount : calculatedFillAmount;
+        assertEq(limitOrder.getRemainingAmount(orderHash), sourceAmount - actualFillAmount);
     }
     
     function testOrderExpiration() public {

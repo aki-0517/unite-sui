@@ -144,11 +144,15 @@ contract CrossChainOrder is ReentrancyGuard, ICrossChainOrder {
         uint256 currentRate = dutchAuction.calculateCurrentRate(orderHash);
         if (currentRate == 0) revert AuctionNotStarted();
 
-        // Calculate fill amount based on current rate
-        uint256 fillAmount = (order.sourceAmount * currentRate) / 1e18;
+        // Calculate fill amount based on current rate, but cap to source amount
+        uint256 calculatedFillAmount = (order.sourceAmount * currentRate) / 1e18;
+        uint256 fillAmount = calculatedFillAmount > order.sourceAmount ? order.sourceAmount : calculatedFillAmount;
         
         // Fill the escrow with the secret
         escrowContract.fillEscrow(escrowId, fillAmount, secret);
+
+        // Transfer the fill amount to the resolver
+        weth.safeTransfer(msg.sender, fillAmount);
 
         // Update order status
         order.status = CrossChainOrderStatus.Completed;
@@ -188,6 +192,9 @@ contract CrossChainOrder is ReentrancyGuard, ICrossChainOrder {
 
         // Complete the escrow
         escrowContract.completeEscrow(escrowId, secret);
+
+        // Transfer the full amount to the resolver
+        weth.safeTransfer(msg.sender, order.sourceAmount);
 
         // Update order status
         order.status = CrossChainOrderStatus.Completed;
@@ -324,6 +331,9 @@ contract CrossChainOrder is ReentrancyGuard, ICrossChainOrder {
         
         // Emergency refund from escrow
         escrowContract.refundEscrow(escrowId);
+        
+        // Transfer the amount back to the maker
+        weth.safeTransfer(order.maker, order.sourceAmount);
         
         // Update status
         order.status = CrossChainOrderStatus.Refunded;
