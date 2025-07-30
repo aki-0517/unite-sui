@@ -8,12 +8,53 @@ This project implements Hash-Time Lock Contract (HTLC) pattern for secure atomic
 
 ## Architecture
 
-### Components
+### Main Features
 
-- **Ethereum Contract**: Solidity smart contract for Ethereum-side escrow management
-- **Sui Contract**: Move smart contract for Sui-side escrow management  
-- **Verification Scripts**: TypeScript scripts for cross-chain swap verification
-- **Integration**: 1inch Fusion+ integration for enhanced security and efficiency
+- **HTLC Atomic Swaps**
+  - Assets are locked with a hashlock and timelock; funds move only if the secret is revealed, otherwise refunded after expiry.
+  - Implemented in `EthereumEscrow.sol` (Solidity) and `cross_chain_escrow.move` (Move).
+
+- **Intent-based Orders & Dutch Auction**
+  - Makers create orders; resolvers compete to fill them. Dutch auction lowers rates over time for optimal execution.
+
+- **Limit Order Protocol**
+  - `LimitOrderProtocol.sol` manages orders, auctions, escrows, and resolver network.
+
+- **Resolver Network**
+  - `ResolverNetwork.sol` handles resolver registration, authorization, staking, and reputation.
+
+- **Cross-chain Coordination**
+  - Order hashes and secrets link escrows on both chains; Sui mirrors HTLC logic.
+
+- **Partial Fill**
+  - Orders can be filled in parts by multiple resolvers.
+
+- **Recovery & Security**
+  - Refunds after expiry; secret reuse is prevented; resolver penalties and reputation enforced.
+
+---
+
+### How it's made
+
+#### Technical Structure
+
+- **Solidity**: `CrossChainOrder.sol` (order/escrow integration), `EthereumEscrow.sol` (HTLC), `DutchAuction.sol` (auction), `LimitOrderProtocol.sol` (order logic), `ResolverNetwork.sol` (resolver management)
+- **Move**: `cross_chain_escrow.move` (HTLC), `hash_lock.move` (hashlock), `time_lock.move` (timelock)
+
+#### Flow Overview
+
+1. **Order Creation**: User calls `createCrossChainOrder` with auction settings; order is registered and auction started.
+2. **Escrow Setup**: HTLC escrows are created on both chains, locking assets with hashlock/timelock.
+3. **Auction & Fill**: Resolvers monitor auction rates and fill orders when profitable; partial fills are tracked.
+4. **Cross-chain & Secret Reveal**: Secret revealed on one chain unlocks funds on the other; verification is on-chain.
+5. **Completion & Refund**: Correct secret transfers assets; after expiry, refunds are possible; resolver misbehavior is penalized.
+
+#### Design Notes
+
+- Off-chain relayers monitor both chains and relay secrets.
+- Resolver safety: KYC/KYB, staking, reputation.
+- All 1inch Fusion+ features (intent, auction, HTLC, partial fill, recovery, resolver network, security) are covered within smart contract scope.
+
 
 ### Cross-Chain Swap Flow
 
@@ -87,89 +128,6 @@ sequenceDiagram
     Note right of FUSION: Share secret when<br/>finality is confirmed
 ```
 
-## Project Structure
-
-```
-unite-sui/
-├── eth-contract/          # Ethereum smart contracts
-│   ├── src/
-│   │   ├── core/          # Main escrow contract
-│   │   ├── interfaces/    # Contract interfaces
-│   │   └── utils/         # Utility contracts
-│   └── test/              # Solidity tests
-├── sui_contract/          # Sui smart contracts
-│   ├── sources/
-│   │   ├── core/          # Main escrow contract
-│   │   └── utils/         # Utility modules
-│   └── tests/             # Move tests
-└── scripts/               # Verification and integration scripts
-    ├── fusion-plus.ts     # 1inch Fusion+ integration
-    └── mermaid.md         # Flow diagrams
-```
-
-## Features
-
-- **Atomic Swaps**: Secure cross-chain token exchanges using HTLC
-- **Partial Fills**: Support for multiple resolvers filling escrows
-- **Time Locks**: Configurable expiration times for escrows
-- **Secret Management**: Secure secret generation and verification
-- **1inch Integration**: Enhanced security with Fusion+ protocol
-- **Multi-Chain Support**: Ethereum Sepolia and Sui testnet
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- Foundry (for Ethereum contracts)
-- Sui CLI (for Sui contracts)
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd unite-sui
-```
-
-2. Install dependencies:
-```bash
-# Ethereum contracts
-cd eth-contract
-forge install
-
-# Sui contracts
-cd ../sui_contract
-sui move build
-
-# Scripts
-cd ../scripts
-npm install
-```
-
-### Testing
-
-```bash
-# Ethereum contracts
-cd eth-contract
-forge test
-
-# Sui contracts
-cd ../sui_contract
-sui move test
-
-# Verification scripts
-cd ../scripts
-npm test
-```
-
-## Security
-
-- Hash-Time Lock Contract (HTLC) pattern
-- Reentrancy protection
-- Time-based expiration
-- Secret verification
-- 1inch Fusion+ security features
 
 ## License
 
