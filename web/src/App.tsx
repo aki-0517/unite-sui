@@ -80,7 +80,10 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1>Unite Sui Cross-Chain Swap</h1>
+        <h1>
+          <img src="/logo.png" alt="Unite Sui" className="logo" />
+          Unite Sui Cross-Chain Swap
+        </h1>
         <p className="subtitle">🪙 Enhanced with WETH integration - exactly like scripts/verify-bidirectional-swap.ts</p>
         <div className="wallet-buttons">
           <ConnectButton />
