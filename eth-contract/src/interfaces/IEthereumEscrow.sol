@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
+
 /**
  * @title IEthereumEscrow
  * @dev Interface for Ethereum escrow contract used in cross-chain atomic swaps
+ * All ETH operations are wrapped through WETH for consistency and security
  */
 interface IEthereumEscrow {
     // Events
@@ -14,7 +17,8 @@ interface IEthereumEscrow {
         uint256 amount,
         bytes32 hashLock,
         uint256 timeLock,
-        string suiOrderHash
+        string suiOrderHash,
+        bool isWeth
     );
     
     event EscrowPartiallyFilled(
@@ -57,21 +61,25 @@ interface IEthereumEscrow {
     error InvalidFillAmount();
     error SecretAlreadyUsed();
     error TransferFailed();
+    error InvalidWethAmount();
+    error WethTransferFailed();
+    error InsufficientWethAllowance();
 
-    // Core functions
+    // Core functions - WETH only
     function createEscrow(
         bytes32 hashLock,
         uint256 timeLock,
         address payable taker,
-        string calldata suiOrderHash
-    ) external payable returns (bytes32 escrowId);
+        string calldata suiOrderHash,
+        uint256 wethAmount
+    ) external returns (bytes32 escrowId);
 
     function fillEscrow(
         bytes32 escrowId,
         uint256 amount,
         bytes32 secret
     ) external;
-    
+
     function completeEscrow(
         bytes32 escrowId,
         bytes32 secret

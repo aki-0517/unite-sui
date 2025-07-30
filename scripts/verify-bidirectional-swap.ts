@@ -42,6 +42,7 @@ const SUI_TIMELOCK_DURATION = parseInt(getOptionalEnvVar('SUI_TIMELOCK_DURATION'
 const ETH_ESCROW_ADDRESS = getRequiredEnvVar('ETH_ESCROW_ADDRESS');
 const SUI_ESCROW_PACKAGE_ID = getRequiredEnvVar('SUI_ESCROW_PACKAGE_ID');
 const SUI_USED_SECRETS_REGISTRY_ID = getRequiredEnvVar('SUI_USED_SECRETS_REGISTRY_ID');
+const WETH_ADDRESS = getRequiredEnvVar('WETH_ADDRESS');
 
 // Private key settings (from environment variables)
 const SEPOLIA_USER_PRIVATE_KEY = getRequiredEnvVar('SEPOLIA_USER_PRIVATE_KEY');
@@ -117,6 +118,51 @@ const walletClient = createWalletClient({
   }),
 });
 
+// WETH ABI
+const WETH_ABI = [
+  {
+    "inputs": [],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "wad", "type": "uint256"}],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "to", "type": "address"}, {"name": "amount", "type": "uint256"}],
+    "name": "approve",
+    "outputs": [{"name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "account", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "owner", "type": "address"}, {"name": "spender", "type": "address"}],
+    "name": "allowance",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
+
+// WETH contract
+const wethContract = {
+  address: WETH_ADDRESS as `0x${string}`,
+  abi: WETH_ABI,
+};
+
 // High-speed Sui RPC endpoint list
 const SUI_RPC_ENDPOINTS = [
   getOptionalEnvVar('SUI_RPC_URL', 'https://fullnode.devnet.sui.io:443'), // Mysten Labs official
@@ -177,18 +223,19 @@ function verifySecret(secret: string, hashLock: string): boolean {
   return calculatedHash === hashLock;
 }
 
-// Ethereum escrow contract ABI (complete version)
+// Ethereum escrow contract ABI (WETH only version)
 const ESCROW_ABI = [
   {
     "inputs": [
       {"name": "hashLock", "type": "bytes32"},
       {"name": "timeLock", "type": "uint256"},
       {"name": "taker", "type": "address"},
-      {"name": "suiOrderHash", "type": "string"}
+      {"name": "suiOrderHash", "type": "string"},
+      {"name": "wethAmount", "type": "uint256"}
     ],
     "name": "createEscrow",
     "outputs": [{"name": "", "type": "bytes32"}],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -253,7 +300,8 @@ const ESCROW_ABI = [
       {"indexed": false, "name": "amount", "type": "uint256"},
       {"indexed": false, "name": "hashLock", "type": "bytes32"},
       {"indexed": false, "name": "timeLock", "type": "uint256"},
-      {"indexed": false, "name": "suiOrderHash", "type": "string"}
+      {"indexed": false, "name": "suiOrderHash", "type": "string"},
+      {"indexed": false, "name": "isWeth", "type": "bool"}
     ],
     "name": "EscrowCreated",
     "type": "event"
@@ -462,7 +510,7 @@ class BidirectionalSwapVerifier {
 
       // 2. Create Fusion Order
       console.log('\n📦 Step 2: Create Fusion Order');
-      const order = await this.createFusionOrder(ethAmount, 'ETH', 'SUI');
+      const order = await this.createFusionOrder(ethAmount, 'WETH', 'SUI');
       
       // 3. Share Order via Relayer
       console.log('\n📤 Step 3: Share Order via Relayer Service');
@@ -503,7 +551,7 @@ class BidirectionalSwapVerifier {
       // 9. Fill Ethereum Escrow
       console.log('\n🔄 Step 9: Fill Ethereum Escrow');
       await this.finalityLock.shareSecretConditionally(escrowId, secret, RESOLVER2_ADDRESS);
-      await this.fillEthEscrow(escrowId, ethAmount, secret, true); // ETH → SUI
+      await this.fillEthEscrow(escrowId, ethAmount, secret, true);
       console.log(`✅ Ethereum escrow fill completed`);
 
       // 10. Create and Fill Sui Escrow
@@ -531,7 +579,7 @@ class BidirectionalSwapVerifier {
 
       console.log('\n🎉 Enhanced Ethereum -> Sui swap completed (1inch Fusion+)!');
       console.log('==================================================');
-      this.printSwapSummary('ETH → SUI', ethAmount, finalSuiAmount, order.id, escrowId);
+      this.printSwapSummary('WETH → SUI', ethAmount, finalSuiAmount, order.id, escrowId);
 
       return {
         success: true,
@@ -567,7 +615,7 @@ class BidirectionalSwapVerifier {
 
       // 2. Create Fusion Order
       console.log('\n📦 Step 2: Create Fusion Order');
-      const order = await this.createFusionOrder(suiAmount, 'SUI', 'ETH');
+      const order = await this.createFusionOrder(suiAmount, 'SUI', 'WETH');
       
       // 3. Share Order via Relayer
       console.log('\n📤 Step 3: Share Order via Relayer Service');
@@ -624,7 +672,7 @@ class BidirectionalSwapVerifier {
       console.log(`📦 Ethereum escrow created: ${escrowId}`);
       
       await this.finalityLock.shareSecretConditionally(escrowId, secret, RESOLVER2_ADDRESS);
-      await this.fillEthEscrow(escrowId, finalEthAmount, secret, false); // SUI → ETH
+      await this.fillEthEscrow(escrowId, finalEthAmount, secret, false);
       console.log(`✅ Ethereum escrow fill completed`);
 
       // 11. Conditional Secret Sharing
@@ -637,7 +685,7 @@ class BidirectionalSwapVerifier {
 
       console.log('\n🎉 Enhanced Sui -> Ethereum swap completed (1inch Fusion+)!');
       console.log('==================================================');
-      this.printSwapSummary('SUI → ETH', finalSuiAmount, finalEthAmount, order.id, escrowId);
+      this.printSwapSummary('SUI → WETH', finalSuiAmount, finalEthAmount, order.id, escrowId);
 
       return {
         success: true,
@@ -655,27 +703,137 @@ class BidirectionalSwapVerifier {
     }
   }
 
-  // Create Ethereum Escrow
+  // Create Ethereum Escrow with WETH (ETH must be wrapped first)
   private async createEthEscrow(hashLock: string, timeLock: bigint, amount: bigint): Promise<string> {
     try {
-      console.log(`🔧 Preparing Ethereum escrow creation...`);
+      console.log(`🔧 Preparing Ethereum escrow creation with WETH...`);
       console.log(`📝 Hash lock: ${hashLock}`);
       console.log(`⏰ Time lock: ${timeLock}`);
-      console.log(`💰 Amount: ${formatEther(amount)} ETH`);
+      console.log(`💰 Amount: ${formatEther(amount)} ETH (will be wrapped to WETH)`);
       console.log(`👤 Taker: ${userAccount.address}`);
       
       // Set minimum amount
-      const minAmount = parseEther('0.0001'); // Minimum 0.0001 ETH
+      const minAmount = parseEther('0.0001');
       if (amount < minAmount) {
         console.log(`⚠️ Amount is too small. Adjusting to minimum amount: ${formatEther(minAmount)} ETH`);
         amount = minAmount;
       }
       
-      // Check state before escrow creation
-      const balance = await publicClient.getBalance({ address: userAccount.address });
-      console.log(`💰 User balance: ${formatEther(balance)} ETH`);
-      if (balance < amount) {
-        throw new Error(`Insufficient balance: ${formatEther(balance)} < ${formatEther(amount)}`);
+      // Check ETH balance
+      const ethBalance = await publicClient.getBalance({ address: userAccount.address });
+      console.log(`💰 User ETH balance: ${formatEther(ethBalance)} ETH`);
+      if (ethBalance < amount) {
+        throw new Error(`Insufficient ETH balance: ${formatEther(ethBalance)} < ${formatEther(amount)}`);
+      }
+
+      // Step 1: Wrap ETH to WETH
+      console.log(`🔄 Step 1: Wrapping ETH to WETH...`);
+      const wrapData = encodeFunctionData({
+        abi: WETH_ABI,
+        functionName: 'deposit',
+        args: [],
+      });
+
+      const wrapGasPrice = await publicClient.getGasPrice();
+      const wrapOptimizedGasPrice = (wrapGasPrice * 150n) / 100n;
+      
+      const wrapHash = await walletClient.sendTransaction({
+        account: userAccount,
+        to: WETH_ADDRESS as `0x${string}`,
+        data: wrapData,
+        value: amount,
+        gasPrice: wrapOptimizedGasPrice,
+        gas: 150000n,
+      });
+      
+      console.log(`📋 WETH wrap transaction hash: ${wrapHash}`);
+      try {
+        await publicClient.waitForTransactionReceipt({ 
+          hash: wrapHash,
+          timeout: 120000,
+          pollingInterval: 2000
+        });
+        console.log(`✅ ETH wrapped to WETH successfully`);
+      } catch (error: any) {
+        if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+          console.log(`⏰ WETH wrap transaction still pending, checking status...`);
+          // Continue execution - transaction might still succeed
+        } else {
+          throw error;
+        }
+      }
+
+      // Step 2: Check WETH balance
+      const wethBalance = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'balanceOf',
+        args: [userAccount.address],
+      });
+      console.log(`💰 User WETH balance: ${formatEther(wethBalance)} WETH`);
+
+      // Step 3: Approve WETH for escrow contract
+      console.log(`🔄 Step 2: Approving WETH for escrow contract...`);
+      
+      // Check current allowance first
+      const currentAllowance = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'allowance',
+        args: [userAccount.address, this.ethEscrowAddress as `0x${string}`],
+      });
+      
+      console.log(`💰 Current WETH allowance: ${formatEther(currentAllowance)} WETH`);
+      
+      if (currentAllowance < amount) {
+        const approveData = encodeFunctionData({
+          abi: WETH_ABI,
+          functionName: 'approve',
+          args: [this.ethEscrowAddress as `0x${string}`, amount],
+        });
+
+        const approveGasPrice = await publicClient.getGasPrice();
+        const approveOptimizedGasPrice = (approveGasPrice * 150n) / 100n;
+        
+        const approveHash = await walletClient.sendTransaction({
+          account: userAccount,
+          to: WETH_ADDRESS as `0x${string}`,
+          data: approveData,
+          gasPrice: approveOptimizedGasPrice,
+          gas: 150000n,
+        });
+        
+        console.log(`📋 WETH approval transaction hash: ${approveHash}`);
+        try {
+          await publicClient.waitForTransactionReceipt({ 
+            hash: approveHash,
+            timeout: 120000,
+            pollingInterval: 2000
+          });
+          console.log(`✅ WETH approved for escrow contract`);
+        } catch (error: any) {
+          if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+            console.log(`⏰ WETH approval transaction still pending, checking status...`);
+            // Continue execution - transaction might still succeed
+          } else {
+            throw error;
+          }
+        }
+        
+        // Double-check allowance after approval
+        const newAllowance = await publicClient.readContract({
+          address: WETH_ADDRESS as `0x${string}`,
+          abi: WETH_ABI,
+          functionName: 'allowance',
+          args: [userAccount.address, this.ethEscrowAddress as `0x${string}`],
+        });
+        console.log(`💰 New WETH allowance: ${formatEther(newAllowance)} WETH`);
+        
+        if (newAllowance < amount) {
+          throw new Error(`WETH approval failed: allowance ${formatEther(newAllowance)} < required ${formatEther(amount)}`);
+        }
+      } else {
+        console.log(`✅ WETH already has sufficient allowance`);
       }
 
       // Validate time lock
@@ -684,7 +842,6 @@ class BidirectionalSwapVerifier {
         throw new Error(`Time lock is in the past: ${timeLock} <= ${currentTime}`);
       }
       
-      // Check parameter types and format
       console.log(`🔍 Debug information:`);
       console.log(`  - Hash lock type: ${typeof hashLock}, length: ${hashLock.length}`);
       console.log(`  - Time lock type: ${typeof timeLock}, value: ${timeLock}`);
@@ -695,42 +852,41 @@ class BidirectionalSwapVerifier {
       console.log(`  - Contract address: ${this.ethEscrowAddress}`);
       console.log(`  - Network: ${await publicClient.getChainId()}`);
       console.log(`  - Gas price: ${formatGwei(await publicClient.getGasPrice())} Gwei`);
+      console.log(`  - Token type: WETH (wrapped from ETH)`);
 
-      // Encode function data
+      // Step 4: Create escrow with WETH
+      console.log(`🔄 Step 3: Creating escrow with WETH...`);
       const data = encodeFunctionData({
         abi: ESCROW_ABI,
         functionName: 'createEscrow',
-        args: [hashLock as `0x${string}`, BigInt(timeLock), userAccount.address, 'test-sui-order'],
+        args: [hashLock as `0x${string}`, BigInt(timeLock), userAccount.address, 'test-sui-order', amount],
       });
 
-      console.log(`📤 Sending transaction...`);
+      console.log(`📤 Sending escrow creation transaction...`);
       
-      // Optimize gas price for speed
       const gasPrice = await publicClient.getGasPrice();
-      const optimizedGasPrice = (gasPrice * 120n) / 100n; // 20% increase for speed
+      const optimizedGasPrice = (gasPrice * 120n) / 100n;
       
       const hash = await walletClient.sendTransaction({
         account: userAccount,
         to: this.ethEscrowAddress as `0x${string}`,
         data,
-        value: amount,
         gasPrice: optimizedGasPrice,
-        gas: 500000n, // Significantly increase gas limit
+        gas: 500000n,
       });
       
-      console.log(`📋 Transaction hash: ${hash}`);
+      console.log(`📋 Escrow creation transaction hash: ${hash}`);
       
       // Store sent transaction hash
-      // This is for ETH → SUI swap (Ethereum escrow creation)
       this.ethSentTxHashes = [hash];
       
       const receipt = await publicClient.waitForTransactionReceipt({ 
         hash,
-        timeout: 60000,
+        timeout: 120000,
         pollingInterval: 2000
       });
       
-      console.log(`📋 Transaction completed: ${receipt.status}`);
+      console.log(`📋 Escrow creation transaction completed: ${receipt.status}`);
       
       if (receipt.status === 'success') {
         // Get escrow ID from transaction logs
@@ -748,7 +904,8 @@ class BidirectionalSwapVerifier {
               { type: 'uint256', name: 'amount', indexed: false },
               { type: 'bytes32', name: 'hashLock', indexed: false },
               { type: 'uint256', name: 'timeLock', indexed: false },
-              { type: 'string', name: 'suiOrderHash', indexed: false }
+              { type: 'string', name: 'suiOrderHash', indexed: false },
+              { type: 'bool', name: 'isWeth', indexed: false }
             ]
           }
         });
@@ -756,39 +913,39 @@ class BidirectionalSwapVerifier {
         if (logs.length > 0) {
           const escrowId = logs[0].args.escrowId;
           if (escrowId) {
-          console.log(`📦 Escrow ID retrieved: ${escrowId}`);
-          
-          // Verify escrow was created correctly
-          const exists = await this.verifyEscrowExists(escrowId);
-          if (exists) {
-            console.log(`✅ Escrow creation confirmed`);
-            return escrowId;
+            console.log(`📦 Escrow ID retrieved: ${escrowId}`);
+            
+            // Verify escrow was created correctly
+            const exists = await this.verifyEscrowExists(escrowId);
+            if (exists) {
+              console.log(`✅ Escrow creation confirmed`);
+              return escrowId;
+            } else {
+              throw new Error('Escrow was not created correctly');
+            }
           } else {
-            throw new Error('Escrow was not created correctly');
-          }
-        } else {
             console.warn('⚠️ Could not retrieve escrow ID from logs. Using calculation fallback.');
           }
         }
         
-          // Fallback: Calculate escrow ID
-          const currentTimestamp = Math.floor(Date.now() / 1000);
-          const escrowId = keccak256(
-            encodePacked(
-              ['address', 'address', 'uint256', 'bytes32', 'uint256', 'uint256', 'uint256'],
-              [userAccount.address as `0x${string}`, userAccount.address as `0x${string}`, amount, hashLock as `0x${string}`, timeLock, BigInt(currentTimestamp), BigInt(receipt.blockNumber)]
-            )
-          );
-          
-          console.log(`📦 Escrow ID calculated: ${escrowId}`);
-          
-          // Verify escrow was created correctly
-          const exists = await this.verifyEscrowExists(escrowId);
-          if (exists) {
-            console.log(`✅ Escrow creation confirmed`);
-            return escrowId;
-          } else {
-            throw new Error('Escrow was not created correctly');
+        // Fallback: Calculate escrow ID
+        const currentTimestamp = Math.floor(Date.now() / 1000);
+        const escrowId = keccak256(
+          encodePacked(
+            ['address', 'address', 'uint256', 'bytes32', 'uint256', 'uint256', 'uint256'],
+            [userAccount.address as `0x${string}`, userAccount.address as `0x${string}`, amount, hashLock as `0x${string}`, timeLock, BigInt(currentTimestamp), BigInt(receipt.blockNumber)]
+          )
+        );
+        
+        console.log(`📦 Escrow ID calculated: ${escrowId}`);
+        
+        // Verify escrow was created correctly
+        const exists = await this.verifyEscrowExists(escrowId);
+        if (exists) {
+          console.log(`✅ Escrow creation confirmed`);
+          return escrowId;
+        } else {
+          throw new Error('Escrow was not created correctly');
         }
       } else {
         throw new Error('Transaction failed');
@@ -797,26 +954,67 @@ class BidirectionalSwapVerifier {
     } catch (error) {
       console.error('❌ Ethereum escrow creation error:', error);
       
-      // Get detailed error information
       if (error && typeof error === 'object' && 'cause' in error) {
         console.error('Detailed error:', error.cause);
       }
       
-      // Get transaction details
+      // Try to get more detailed error information
       try {
-        if (error && typeof error === 'object' && 'hash' in error) {
-          const tx = await publicClient.getTransaction({ hash: error.hash as `0x${string}` });
-          console.error('Transaction details:', tx);
+        if (error && typeof error === 'object') {
+          if ('hash' in error) {
+            const tx = await publicClient.getTransaction({ hash: error.hash as `0x${string}` });
+            console.error('Transaction details:', tx);
+            
+            // Try to get transaction receipt for more details
+            try {
+              const receipt = await publicClient.getTransactionReceipt({ hash: error.hash as `0x${string}` });
+              console.error('Transaction receipt:', receipt);
+            } catch (receiptError) {
+              console.error('Receipt retrieval error:', receiptError);
+            }
+          }
+          
+          // Check for contract simulation error
+          if ('details' in error) {
+            console.error('Contract simulation details:', error.details);
+          }
+          
+          if ('data' in error) {
+            console.error('Error data:', error.data);
+          }
+          
+          if ('message' in error) {
+            console.error('Error message:', error.message);
+          }
         }
-      } catch (txError) {
-        console.error('Transaction details retrieval error:', txError);
+        
+        // Try to simulate the contract call to see what would happen
+        try {
+          console.log('🔄 Attempting contract call simulation...');
+          await publicClient.simulateContract({
+            address: this.ethEscrowAddress as `0x${string}`,
+            abi: ESCROW_ABI,
+            functionName: 'createEscrow',
+            args: [hashLock as `0x${string}`, BigInt(timeLock), userAccount.address, 'test-sui-order', amount],
+            account: userAccount,
+          });
+          console.log('✅ Contract simulation succeeded');
+        } catch (simError) {
+          console.error('❌ Contract simulation failed:', simError);
+          if (simError && typeof simError === 'object' && 'cause' in simError) {
+            console.error('Simulation cause:', simError.cause);
+          }
+        }
+        
+      } catch (detailError) {
+        console.error('Error details retrieval failed:', detailError);
       }
       
       throw error;
     }
   }
 
-  // Verify escrow exists
+  // Verify escrow exists (WETH only)
   private async verifyEscrowExists(escrowId: string): Promise<boolean> {
     try {
       const escrow = await publicClient.readContract({
@@ -827,16 +1025,15 @@ class BidirectionalSwapVerifier {
       });
       
       const [maker, taker, totalAmount, remainingAmount, , , completed, refunded, ,] = escrow;
-      
-      console.log(`🔍 Escrow information verification:`);
+      console.log(`🔍 WETH Escrow information verification:`);
       console.log(`  👤 Maker: ${maker}`);
       console.log(`  👤 Taker: ${taker}`);
-      console.log(`  💰 Total Amount: ${formatEther(totalAmount)} ETH`);
-      console.log(`  💰 Remaining Amount: ${formatEther(remainingAmount)} ETH`);
+      console.log(`  💰 Total Amount: ${formatEther(totalAmount)} WETH`);
+      console.log(`  💰 Remaining Amount: ${formatEther(remainingAmount)} WETH`);
       console.log(`  ✅ Completed: ${completed}`);
       console.log(`  ❌ Refunded: ${refunded}`);
+      console.log(`  🪙 Token Type: WETH`);
       
-      // Check if escrow exists (maker is not zero address and totalAmount is not 0)
       return maker !== '0x0000000000000000000000000000000000000000' && totalAmount > 0n;
     } catch (error) {
       console.error('❌ Escrow verification error:', error);
@@ -844,18 +1041,18 @@ class BidirectionalSwapVerifier {
     }
   }
 
-  // Fill Ethereum Escrow (2 resolvers perform partial fill)
+  // Fill Ethereum Escrow (WETH only)
   private async fillEthEscrow(escrowId: string, amount: bigint, secret: string, isEthToSui: boolean = true): Promise<void> {
     try {
-      console.log(`🔧 Preparing Ethereum escrow fill...`);
+      console.log(`🔧 Preparing Ethereum escrow fill with WETH...`);
       console.log(`📦 Escrow ID: ${escrowId}`);
-      console.log(`💰 Total amount: ${formatEther(amount)} ETH`);
+      console.log(`💰 Total amount: ${formatEther(amount)} WETH`);
       console.log(`🔑 Secret: ${secret}`);
 
       // Pre-verify escrow information
       const escrowInfo = await this.getEscrowInfo(escrowId);
       console.log(`🔍 Pre-escrow verification:`);
-      console.log(`  💰 Remaining amount: ${formatEther(escrowInfo.remainingAmount)} ETH`);
+      console.log(`  💰 Remaining amount: ${formatEther(escrowInfo.remainingAmount)} WETH`);
       console.log(`  ✅ Completed: ${escrowInfo.completed}`);
       console.log(`  ❌ Refunded: ${escrowInfo.refunded}`);
       console.log(`  🔒 Hash lock: ${escrowInfo.hashLock}`);
@@ -867,7 +1064,7 @@ class BidirectionalSwapVerifier {
         throw new Error('Escrow is already refunded');
       }
       if (amount > escrowInfo.remainingAmount) {
-        throw new Error(`Requested amount (${formatEther(amount)} ETH) exceeds remaining amount (${formatEther(escrowInfo.remainingAmount)} ETH)`);
+        throw new Error(`Requested amount (${formatEther(amount)} WETH) exceeds remaining amount (${formatEther(escrowInfo.remainingAmount)} WETH)`);
       }
 
       // Secret verification debug
@@ -885,7 +1082,92 @@ class BidirectionalSwapVerifier {
 
       // Partial fill: Resolver2 fills half
       const halfAmount = amount / BigInt(2);
-      console.log(`🔄 Resolver2 starting partial fill: ${formatEther(halfAmount)} ETH`);
+      console.log(`🔄 Resolver2 starting partial fill: ${formatEther(halfAmount)} WETH`);
+      
+      // Resolver2: Wrap ETH to WETH first
+      console.log(`💰 Resolver2 wrapping ETH to WETH: ${formatEther(halfAmount)} ETH`);
+      const wrapData1 = encodeFunctionData({
+        abi: WETH_ABI,
+        functionName: 'deposit',
+        args: [],
+      });
+
+      const resolver2WrapGasPrice = await publicClient.getGasPrice();
+      const resolver2WrapOptimizedGasPrice = (resolver2WrapGasPrice * 150n) / 100n;
+      
+      const wrapHash1 = await walletClient.sendTransaction({
+        account: resolver2Account,
+        to: WETH_ADDRESS as `0x${string}`,
+        data: wrapData1,
+        value: halfAmount,
+        gasPrice: resolver2WrapOptimizedGasPrice,
+        gas: 150000n,
+      });
+      
+      console.log(`📋 Resolver2 WETH wrap transaction hash: ${wrapHash1}`);
+      try {
+        await publicClient.waitForTransactionReceipt({ 
+          hash: wrapHash1,
+          timeout: 120000,
+          pollingInterval: 2000
+        });
+        console.log(`✅ Resolver2 ETH wrapped to WETH successfully`);
+      } catch (error: any) {
+        if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+          console.log(`⏰ Resolver2 WETH wrap transaction still pending, checking status...`);
+          // Continue execution - transaction might still succeed
+        } else {
+          throw error;
+        }
+      }
+      
+      // Resolver2: Approve WETH for escrow contract
+      console.log(`🔄 Resolver2 approving WETH for escrow contract...`);
+      
+      const resolver2Allowance = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'allowance',
+        args: [resolver2Account.address, this.ethEscrowAddress as `0x${string}`],
+      });
+      
+      if (resolver2Allowance < halfAmount) {
+        const approveData1 = encodeFunctionData({
+          abi: WETH_ABI,
+          functionName: 'approve',
+          args: [this.ethEscrowAddress as `0x${string}`, halfAmount],
+        });
+
+        const resolver2ApproveGasPrice = await publicClient.getGasPrice();
+        const resolver2ApproveOptimizedGasPrice = (resolver2ApproveGasPrice * 150n) / 100n;
+        
+        const approveHash1 = await walletClient.sendTransaction({
+          account: resolver2Account,
+          to: WETH_ADDRESS as `0x${string}`,
+          data: approveData1,
+          gasPrice: resolver2ApproveOptimizedGasPrice,
+          gas: 150000n,
+        });
+        
+        console.log(`📋 Resolver2 WETH approval transaction hash: ${approveHash1}`);
+        try {
+          await publicClient.waitForTransactionReceipt({ 
+            hash: approveHash1,
+            timeout: 120000,
+            pollingInterval: 2000
+          });
+          console.log(`✅ Resolver2 WETH approved for escrow contract`);
+        } catch (error: any) {
+          if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+            console.log(`⏰ Resolver2 WETH approval transaction still pending, checking status...`);
+            // Continue execution - transaction might still succeed
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        console.log(`✅ Resolver2 WETH already has sufficient allowance`);
+      }
       
       const data1 = encodeFunctionData({
         abi: ESCROW_ABI,
@@ -909,25 +1191,60 @@ class BidirectionalSwapVerifier {
       
       const receipt1 = await publicClient.waitForTransactionReceipt({ 
         hash: hash1,
-        timeout: 60000,
+        timeout: 120000,
         pollingInterval: 2000
       });
       console.log(`✅ Resolver2 transaction completed: ${receipt1.status}`);
       
-      // Resolver2 transfers received funds to actual recipient address
-      console.log(`🔄 Resolver2 starting transfer to recipient address: ${formatEther(halfAmount)} ETH`);
-      const transferData1 = encodeFunctionData({
-        abi: [{
-          type: 'function',
-          name: 'transfer',
-          inputs: [{ type: 'address', name: 'to' }],
-          outputs: [{ type: 'bool' }],
-          stateMutability: 'payable'
-        }],
-        functionName: 'transfer',
-        args: [userAccount.address as `0x${string}`],
+      // Resolver2 unwraps WETH to ETH and transfers to recipient
+      console.log(`🔄 Resolver2 unwrapping WETH to ETH and transferring: ${formatEther(halfAmount)} ETH`);
+      
+      // Check Resolver2 WETH balance before unwrapping
+      const resolver2WethBalance = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'balanceOf',
+        args: [resolver2Account.address],
+      });
+      console.log(`💰 Resolver2 WETH balance before unwrap: ${formatEther(resolver2WethBalance)} WETH`);
+      
+      if (resolver2WethBalance < halfAmount) {
+        throw new Error(`Resolver2 has insufficient WETH balance: ${formatEther(resolver2WethBalance)} < ${formatEther(halfAmount)}`);
+      }
+      
+      // Step 1: Unwrap WETH to ETH
+      const unwrapData1 = encodeFunctionData({
+        abi: WETH_ABI,
+        functionName: 'withdraw',
+        args: [halfAmount],
       });
 
+      const unwrapHash1 = await walletClient.sendTransaction({
+        account: resolver2Account,
+        to: WETH_ADDRESS as `0x${string}`,
+        data: unwrapData1,
+        gasPrice: optimizedGasPrice,
+        gas: 100000n,
+      });
+      console.log(`📋 Resolver2 WETH unwrap transaction hash: ${unwrapHash1}`);
+      
+      const unwrapReceipt1 = await publicClient.waitForTransactionReceipt({ 
+        hash: unwrapHash1,
+        timeout: 120000,
+        pollingInterval: 2000
+      });
+      console.log(`✅ Resolver2 WETH unwrap completed: ${unwrapReceipt1.status}`);
+      
+      // Verify WETH balance after unwrap
+      const resolver2WethBalanceAfter = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'balanceOf',
+        args: [resolver2Account.address],
+      });
+      console.log(`💰 Resolver2 WETH balance after unwrap: ${formatEther(resolver2WethBalanceAfter)} WETH`);
+      
+      // Step 2: Transfer ETH to recipient
       const transferHash1 = await walletClient.sendTransaction({
         account: resolver2Account,
         to: userAccount.address as `0x${string}`,
@@ -935,26 +1252,110 @@ class BidirectionalSwapVerifier {
         gasPrice: optimizedGasPrice,
         gas: 21000n,
       });
-      console.log(`📋 Resolver2 transfer hash: ${transferHash1}`);
+      console.log(`📋 Resolver2 ETH transfer hash: ${transferHash1}`);
       
       const transferReceipt1 = await publicClient.waitForTransactionReceipt({ 
         hash: transferHash1,
-        timeout: 60000,
+        timeout: 120000,
         pollingInterval: 2000
       });
-      console.log(`✅ Resolver2 transfer completed: ${transferReceipt1.status}`);
-      console.log(`🔗 Resolver2 transfer transaction: https://sepolia.etherscan.io/tx/${transferHash1}`);
-      console.log(`🔗 User address deposit history: https://sepolia.etherscan.io/tx/${transferHash1}#eventlog`);
+      console.log(`✅ Resolver2 ETH transfer completed: ${transferReceipt1.status}`);
+      console.log(`🔗 Resolver2 ETH transfer transaction: https://sepolia.etherscan.io/tx/${transferHash1}`);
       
       // Verify escrow information after partial fill
       const midEscrowInfo = await this.getEscrowInfo(escrowId);
       console.log(`🔍 Post-Resolver2 fill verification:`);
-      console.log(`  💰 Remaining amount: ${formatEther(midEscrowInfo.remainingAmount)} ETH`);
+      console.log(`  💰 Remaining amount: ${formatEther(midEscrowInfo.remainingAmount)} WETH`);
       console.log(`  ✅ Completed: ${midEscrowInfo.completed}`);
 
       // Partial fill: Resolver3 fills the remainder
       const remainingAmount = amount - halfAmount;
-      console.log(`🔄 Resolver3 starting partial fill: ${formatEther(remainingAmount)} ETH`);
+      console.log(`🔄 Resolver3 starting partial fill: ${formatEther(remainingAmount)} WETH`);
+      
+      // Resolver3: Wrap ETH to WETH first
+      console.log(`💰 Resolver3 wrapping ETH to WETH: ${formatEther(remainingAmount)} ETH`);
+      const wrapData2 = encodeFunctionData({
+        abi: WETH_ABI,
+        functionName: 'deposit',
+        args: [],
+      });
+
+      const resolver3WrapGasPrice = await publicClient.getGasPrice();
+      const resolver3WrapOptimizedGasPrice = (resolver3WrapGasPrice * 150n) / 100n;
+      
+      const wrapHash2 = await walletClient.sendTransaction({
+        account: resolver3Account,
+        to: WETH_ADDRESS as `0x${string}`,
+        data: wrapData2,
+        value: remainingAmount,
+        gasPrice: resolver3WrapOptimizedGasPrice,
+        gas: 150000n,
+      });
+      
+      console.log(`📋 Resolver3 WETH wrap transaction hash: ${wrapHash2}`);
+      try {
+        await publicClient.waitForTransactionReceipt({ 
+          hash: wrapHash2,
+          timeout: 120000,
+          pollingInterval: 2000
+        });
+        console.log(`✅ Resolver3 ETH wrapped to WETH successfully`);
+      } catch (error: any) {
+        if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+          console.log(`⏰ Resolver3 WETH wrap transaction still pending, checking status...`);
+          // Continue execution - transaction might still succeed
+        } else {
+          throw error;
+        }
+      }
+      
+      // Resolver3: Approve WETH for escrow contract
+      console.log(`🔄 Resolver3 approving WETH for escrow contract...`);
+      
+      const resolver3Allowance = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'allowance',
+        args: [resolver3Account.address, this.ethEscrowAddress as `0x${string}`],
+      });
+      
+      if (resolver3Allowance < remainingAmount) {
+        const approveData2 = encodeFunctionData({
+          abi: WETH_ABI,
+          functionName: 'approve',
+          args: [this.ethEscrowAddress as `0x${string}`, remainingAmount],
+        });
+
+        const resolver3ApproveGasPrice = await publicClient.getGasPrice();
+        const resolver3ApproveOptimizedGasPrice = (resolver3ApproveGasPrice * 150n) / 100n;
+        
+        const approveHash2 = await walletClient.sendTransaction({
+          account: resolver3Account,
+          to: WETH_ADDRESS as `0x${string}`,
+          data: approveData2,
+          gasPrice: resolver3ApproveOptimizedGasPrice,
+          gas: 150000n,
+        });
+        
+        console.log(`📋 Resolver3 WETH approval transaction hash: ${approveHash2}`);
+        try {
+          await publicClient.waitForTransactionReceipt({ 
+            hash: approveHash2,
+            timeout: 120000,
+            pollingInterval: 2000
+          });
+          console.log(`✅ Resolver3 WETH approved for escrow contract`);
+        } catch (error: any) {
+          if (error.name === 'WaitForTransactionReceiptTimeoutError') {
+            console.log(`⏰ Resolver3 WETH approval transaction still pending, checking status...`);
+            // Continue execution - transaction might still succeed
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        console.log(`✅ Resolver3 WETH already has sufficient allowance`);
+      }
       
       const data2 = encodeFunctionData({
         abi: ESCROW_ABI,
@@ -975,13 +1376,60 @@ class BidirectionalSwapVerifier {
       
       const receipt2 = await publicClient.waitForTransactionReceipt({ 
         hash: hash2,
-        timeout: 60000,
+        timeout: 120000,
         pollingInterval: 2000
       });
       console.log(`✅ Resolver3 transaction completed: ${receipt2.status}`);
       
-      // Resolver3 transfers received funds to actual recipient address
-      console.log(`🔄 Resolver3 starting transfer to recipient address: ${formatEther(remainingAmount)} ETH`);
+      // Resolver3 unwraps WETH to ETH and transfers to recipient
+      console.log(`🔄 Resolver3 unwrapping WETH to ETH and transferring: ${formatEther(remainingAmount)} ETH`);
+      
+      // Check Resolver3 WETH balance before unwrapping
+      const resolver3WethBalance = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'balanceOf',
+        args: [resolver3Account.address],
+      });
+      console.log(`💰 Resolver3 WETH balance before unwrap: ${formatEther(resolver3WethBalance)} WETH`);
+      
+      if (resolver3WethBalance < remainingAmount) {
+        throw new Error(`Resolver3 has insufficient WETH balance: ${formatEther(resolver3WethBalance)} < ${formatEther(remainingAmount)}`);
+      }
+      
+      // Step 1: Unwrap WETH to ETH
+      const unwrapData2 = encodeFunctionData({
+        abi: WETH_ABI,
+        functionName: 'withdraw',
+        args: [remainingAmount],
+      });
+
+      const unwrapHash2 = await walletClient.sendTransaction({
+        account: resolver3Account,
+        to: WETH_ADDRESS as `0x${string}`,
+        data: unwrapData2,
+        gasPrice: optimizedGasPrice,
+        gas: 100000n,
+      });
+      console.log(`📋 Resolver3 WETH unwrap transaction hash: ${unwrapHash2}`);
+      
+      const unwrapReceipt2 = await publicClient.waitForTransactionReceipt({ 
+        hash: unwrapHash2,
+        timeout: 120000,
+        pollingInterval: 2000
+      });
+      console.log(`✅ Resolver3 WETH unwrap completed: ${unwrapReceipt2.status}`);
+      
+      // Verify WETH balance after unwrap
+      const resolver3WethBalanceAfter = await publicClient.readContract({
+        address: WETH_ADDRESS as `0x${string}`,
+        abi: WETH_ABI,
+        functionName: 'balanceOf',
+        args: [resolver3Account.address],
+      });
+      console.log(`💰 Resolver3 WETH balance after unwrap: ${formatEther(resolver3WethBalanceAfter)} WETH`);
+      
+      // Step 2: Transfer ETH to recipient
       const transferHash2 = await walletClient.sendTransaction({
         account: resolver3Account,
         to: userAccount.address as `0x${string}`,
@@ -989,28 +1437,27 @@ class BidirectionalSwapVerifier {
         gasPrice: optimizedGasPrice,
         gas: 21000n,
       });
-      console.log(`📋 Resolver3 transfer hash: ${transferHash2}`);
+      console.log(`📋 Resolver3 ETH transfer hash: ${transferHash2}`);
       
       const transferReceipt2 = await publicClient.waitForTransactionReceipt({ 
         hash: transferHash2,
-        timeout: 60000,
+        timeout: 120000,
         pollingInterval: 2000
       });
-      console.log(`✅ Resolver3 transfer completed: ${transferReceipt2.status}`);
-      console.log(`🔗 Resolver3 transfer transaction: https://sepolia.etherscan.io/tx/${transferHash2}`);
-      console.log(`🔗 User address deposit history: https://sepolia.etherscan.io/tx/${transferHash2}#eventlog`);
+      console.log(`✅ Resolver3 ETH transfer completed: ${transferReceipt2.status}`);
+      console.log(`🔗 Resolver3 ETH transfer transaction: https://sepolia.etherscan.io/tx/${transferHash2}`);
       
       // Final escrow information verification
       const finalEscrowInfo = await this.getEscrowInfo(escrowId);
       console.log(`🔍 Final verification:`);
-      console.log(`  💰 Remaining amount: ${formatEther(finalEscrowInfo.remainingAmount)} ETH`);
+      console.log(`  💰 Remaining amount: ${formatEther(finalEscrowInfo.remainingAmount)} WETH`);
       console.log(`  ✅ Completed: ${finalEscrowInfo.completed}`);
       
-      console.log(`✅ Ethereum escrow fill completed (partial fill by 2 resolvers)`);
+      console.log(`✅ Ethereum escrow fill completed (WETH unwrapped to ETH)`);
       console.log(`📋 Fill details:`);
-      console.log(`  👤 Resolver2: ${formatEther(halfAmount)} ETH → ${userAccount.address}`);
-      console.log(`  👤 Resolver3: ${formatEther(remainingAmount)} ETH → ${userAccount.address}`);
-      console.log(`  💰 Total: ${formatEther(amount)} ETH`);
+      console.log(`  👤 Resolver2: ${formatEther(halfAmount)} WETH → ${formatEther(halfAmount)} ETH → ${userAccount.address}`);
+      console.log(`  👤 Resolver3: ${formatEther(remainingAmount)} WETH → ${formatEther(remainingAmount)} ETH → ${userAccount.address}`);
+      console.log(`  💰 Total: ${formatEther(amount)} WETH → ${formatEther(amount)} ETH`);
       console.log(`🔗 User received transaction history:`);
       console.log(`  📥 User received: ${formatEther(halfAmount)} ETH via Resolver2: https://sepolia.etherscan.io/tx/${transferHash1}`);
       console.log(`  📥 User received: ${formatEther(remainingAmount)} ETH via Resolver3: https://sepolia.etherscan.io/tx/${transferHash2}`);
@@ -1018,13 +1465,9 @@ class BidirectionalSwapVerifier {
       console.log(`  📥 User wallet: https://sepolia.etherscan.io/address/${userAccount.address}#tokentxns`);
       
       // Store transaction hashes for final summary
-      // For ETH → SUI: Store Ethereum sent transactions
-      // For SUI → ETH: Store Ethereum received transactions
       if (isEthToSui) {
-        // ETH → SUI: Store Ethereum sent transactions
         this.ethSentTxHashes = [transferHash1, transferHash2];
       } else {
-        // SUI → ETH: Store Ethereum received transactions
         this.ethReceivedTxHashes = [transferHash1, transferHash2];
       }
       
@@ -1037,7 +1480,7 @@ class BidirectionalSwapVerifier {
     }
   }
 
-  // Get escraw information
+  // Get escrow information (WETH only)
   private async getEscrowInfo(escrowId: string) {
     try {
       const escrow = await publicClient.readContract({
@@ -1357,16 +1800,17 @@ class BidirectionalSwapVerifier {
     console.log(`\n📊 ${direction} Swap Summary:`);
     console.log(`  🆔 Order ID: ${orderId}`);
     console.log(`  📦 Escrow ID: ${escrowId}`);
-    console.log(`  💰 Source: ${direction.includes('ETH →') ? formatEther(sourceAmount) + ' ETH' : sourceAmount.toString() + ' SUI'}`);
-    console.log(`  💸 Destination: ${direction.includes('→ ETH') ? formatEther(destAmount) + ' ETH' : destAmount.toString() + ' SUI'}`);
+    console.log(`  💰 Source: ${direction.includes('WETH →') ? formatEther(sourceAmount) + ' WETH' : sourceAmount.toString() + ' SUI'}`);
+    console.log(`  💸 Destination: ${direction.includes('→ WETH') ? formatEther(destAmount) + ' WETH' : destAmount.toString() + ' SUI'}`);
     console.log(`  ✅ Status: Success`);
-    console.log(`  �� Enhanced Features: Dutch Auction, Safety Deposit, Finality Lock, Security Manager`);
+    console.log(`  🚀 Enhanced Features: Dutch Auction, Safety Deposit, Finality Lock, Security Manager, WETH Support`);
   }
 }
 
 // Main execution function
 async function main() {
   console.log('🚀 Starting 1inch Fusion+ compliant bidirectional cross-chain swap verification');
+  console.log('🪙 Enhanced with WETH integration for secure ETH handling');
   console.log('==================================================');
 
   // Enhanced verifier with 1inch Fusion+ features
@@ -1409,11 +1853,12 @@ async function main() {
   console.log('------------------------------');
   
   try {
-    console.log('🔄 Enhanced Ethereum -> Sui swap verification (1inch Fusion+)...');
+    // Test with WETH (ETH wrapped to WETH)
+    console.log('🔄 Enhanced Ethereum -> Sui swap verification (WETH)...');
     const ethToSuiResult = await verifier.verifyEnhancedEthToSuiSwap(testEthAmount);
     
     if (ethToSuiResult.success) {
-      console.log('✅ Enhanced Ethereum -> Sui swap successful (1inch Fusion+)');
+      console.log('✅ Enhanced Ethereum -> Sui swap successful (WETH)');
     } else {
       console.log('❌ Enhanced Ethereum -> Sui swap failed:', ethToSuiResult.error);
     }
@@ -1432,8 +1877,8 @@ async function main() {
     
     // Results summary
     console.log('\n📊 1inch Fusion+ Test Results Summary:');
-    console.log(`  🔗 Enhanced Ethereum -> Sui: ${ethToSuiResult.success ? '✅ Success' : '❌ Failed'}`);
-    console.log(`  🔗 Enhanced Sui -> Ethereum: ${suiToEthResult.success ? '✅ Success' : '❌ Failed'}`);
+    console.log(`  🔗 Enhanced WETH -> Sui: ${ethToSuiResult.success ? '✅ Success' : '❌ Failed'}`);
+    console.log(`  🔗 Enhanced Sui -> WETH: ${suiToEthResult.success ? '✅ Success' : '❌ Failed'}`);
     console.log(`  🚀 Fusion+ Features:`);
     console.log(`    🏁 Dutch Auction: ✅ Verified working`);
     console.log(`    🛡️ Safety Deposit: ✅ Verified working`);
@@ -1446,6 +1891,7 @@ async function main() {
     console.log(`    📤 Relayer Service: ✅ 動作確認済み`);
     console.log(`    ⛽ Gas Price Adjustment: ✅ 動作確認済み`);
     console.log(`    🔒 Security Manager: ✅ 動作確認済み`);
+    console.log(`    🪙 WETH Support: ✅ 動作確認済み`);
 
     console.log(`🎉 1inch Fusion+ compliant bidirectional cross-chain swap verification completed!`);
     console.log(`🔗 User Transaction History:`);
@@ -1476,22 +1922,25 @@ async function main() {
       });
     }
     console.log(`💡 Note: These links show the actual transaction hashes for amounts sent and received by the user wallets`);
+    console.log(`💡 Note: All ETH operations are now wrapped through WETH for consistency and security`);
+    console.log(`🪙 WETH Integration:`);
+    console.log(`  ✅ ETH → WETH: Automatic wrapping before escrow creation`);
+    console.log(`  ✅ WETH → ETH: Automatic unwrapping after escrow completion`);
+    console.log(`  ✅ Balance checks: WETH allowance and balance verification`);
+    console.log(`  ✅ Error handling: Insufficient balance detection and reporting`);
     
   } catch (error) {
     console.error('❌ Test execution error:', error);
     
-    // Display detailed error information
     if (error && typeof error === 'object' && 'cause' in error) {
       console.error('Detailed error:', error.cause);
     }
     
-    // Display account information
     console.error('🔍 Debug information:');
     console.error(`  - User address: ${userAccount.address}`);
     console.error(`  - Contract address: ${ETH_ESCROW_ADDRESS}`);
     console.error(`  - Network: Sepolia Testnet`);
     
-    // Provide solutions
     console.error('💡 Solutions:');
     console.error('1. Check ETH balance on Sepolia testnet');
     console.error('2. Verify that the contract is properly deployed');

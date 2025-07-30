@@ -5,9 +5,29 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "../src/core/EthereumEscrow.sol";
 import "../src/interfaces/IEthereumEscrow.sol";
+import "openzeppelin-contracts/token/ERC20/ERC20.sol";
+
+// Mock WETH contract for testing
+contract MockWETH is ERC20 {
+    constructor() ERC20("Wrapped Ether", "WETH") {}
+    
+    function deposit() external payable {
+        _mint(msg.sender, msg.value);
+    }
+    
+    function withdraw(uint256 amount) external {
+        _burn(msg.sender, amount);
+        payable(msg.sender).transfer(amount);
+    }
+    
+    receive() external payable {
+        _mint(msg.sender, msg.value);
+    }
+}
 
 contract EthereumEscrowTest is Test {
     EthereumEscrow public escrow;
+    MockWETH public weth;
     
     address public maker = address(0x1);
     address public taker = address(0x2);
@@ -30,7 +50,8 @@ contract EthereumEscrowTest is Test {
         uint256 amount,
         bytes32 hashLock,
         uint256 timeLock,
-        string suiOrderHash
+        string suiOrderHash,
+        bool isWeth
     );
     
     event EscrowPartiallyFilled(
@@ -57,26 +78,45 @@ contract EthereumEscrowTest is Test {
     );
 
     function setUp() public {
-        escrow = new EthereumEscrow();
+        // Deploy mock WETH
+        weth = new MockWETH();
+        
+        // Deploy escrow with WETH address
+        escrow = new EthereumEscrow(address(weth));
+        
         hashLock = escrow.createHashLock(secret);
         timeLock = block.timestamp + 1 hours;
         
-        // Give test addresses some ETH
-        vm.deal(maker, 10 ether);
-        vm.deal(taker, 10 ether);
-        vm.deal(other, 10 ether);
-        vm.deal(resolver1, 10 ether);
-        vm.deal(resolver2, 10 ether);
+        // Give test addresses some ETH and WETH
+        vm.deal(maker, 20 ether);
+        vm.deal(taker, 20 ether);
+        vm.deal(other, 20 ether);
+        vm.deal(resolver1, 20 ether);
+        vm.deal(resolver2, 20 ether);
+        
+        // Convert ETH to WETH for test addresses
+        vm.prank(maker);
+        weth.deposit{value: 15 ether}();
+        vm.prank(taker);
+        weth.deposit{value: 15 ether}();
+        vm.prank(resolver1);
+        weth.deposit{value: 15 ether}();
+        vm.prank(resolver2);
+        weth.deposit{value: 15 ether}();
     }
     
     function testCreateEscrow() public {
         vm.startPrank(maker);
         
-        escrowId = escrow.createEscrow{value: amount}(
+        // Approve WETH spending
+        weth.approve(address(escrow), amount);
+        
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         vm.stopPrank();
@@ -110,12 +150,13 @@ contract EthereumEscrowTest is Test {
     function testCreateEscrowWithZeroAmount() public {
         vm.startPrank(maker);
         
-        vm.expectRevert(IEthereumEscrow.InvalidAmount.selector);
-        escrow.createEscrow{value: 0}(
+        vm.expectRevert(IEthereumEscrow.InvalidWethAmount.selector);
+        escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            0
         );
         
         vm.stopPrank();
@@ -127,11 +168,12 @@ contract EthereumEscrowTest is Test {
         uint256 pastTimeLock = block.timestamp - 1;
         
         vm.expectRevert(IEthereumEscrow.InvalidTimeLock.selector);
-        escrow.createEscrow{value: amount}(
+        escrow.createEscrow(
             hashLock,
             pastTimeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         vm.stopPrank();
@@ -140,12 +182,16 @@ contract EthereumEscrowTest is Test {
     function testCreateEscrowWithZeroTaker() public {
         vm.startPrank(maker);
         
+        // Approve WETH spending
+        weth.approve(address(escrow), amount);
+        
         // Zero address taker is now allowed for open fills
-        bytes32 openEscrowId = escrow.createEscrow{value: amount}(
+        bytes32 openEscrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(address(0)),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Verify escrow was created with zero taker
@@ -158,15 +204,19 @@ contract EthereumEscrowTest is Test {
     function testCompleteEscrow() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
-        // Check initial taker balance
-        uint256 initialBalance = taker.balance;
+        // Check initial taker WETH balance
+        uint256 initialBalance = weth.balanceOf(taker);
         
         // Complete the escrow
         vm.startPrank(taker);
@@ -178,8 +228,8 @@ contract EthereumEscrowTest is Test {
         
         vm.stopPrank();
         
-        // Verify taker received the funds
-        assertEq(taker.balance, initialBalance + amount);
+        // Verify taker received the WETH
+        assertEq(weth.balanceOf(taker), initialBalance + amount);
         
         // Verify escrow is marked as completed
         (,,,,,, bool completed, bool refunded,,) = escrow.getEscrow(escrowId);
@@ -193,11 +243,15 @@ contract EthereumEscrowTest is Test {
     function testCompleteEscrowWithWrongSecret() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Try to complete with wrong secret
@@ -214,11 +268,15 @@ contract EthereumEscrowTest is Test {
     function testCompleteEscrowByWrongTaker() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Try to complete by wrong person
@@ -233,11 +291,15 @@ contract EthereumEscrowTest is Test {
     function testCompleteEscrowAfterExpiry() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Fast forward past expiry
@@ -255,11 +317,15 @@ contract EthereumEscrowTest is Test {
     function testCompleteEscrowTwice() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Complete the escrow once
@@ -278,18 +344,22 @@ contract EthereumEscrowTest is Test {
     function testRefundEscrow() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Fast forward past expiry
         vm.warp(timeLock + 1);
         
-        // Check initial maker balance
-        uint256 initialBalance = maker.balance;
+        // Check initial maker WETH balance
+        uint256 initialBalance = weth.balanceOf(maker);
         
         // Refund the escrow
         vm.startPrank(maker);
@@ -302,7 +372,7 @@ contract EthereumEscrowTest is Test {
         vm.stopPrank();
         
         // Verify maker received the refund
-        assertEq(maker.balance, initialBalance + amount);
+        assertEq(weth.balanceOf(maker), initialBalance + amount);
         
         // Verify escrow is marked as refunded
         (,,,,,, bool completed, bool refunded,,) = escrow.getEscrow(escrowId);
@@ -313,11 +383,15 @@ contract EthereumEscrowTest is Test {
     function testRefundEscrowBeforeExpiry() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Try to refund before expiry
@@ -332,11 +406,15 @@ contract EthereumEscrowTest is Test {
     function testRefundEscrowByWrongMaker() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Fast forward past expiry
@@ -354,11 +432,15 @@ contract EthereumEscrowTest is Test {
     function testRefundCompletedEscrow() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Complete the escrow
@@ -395,11 +477,15 @@ contract EthereumEscrowTest is Test {
     function testIsExpired() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Check before expiry
@@ -415,11 +501,15 @@ contract EthereumEscrowTest is Test {
     function testCanComplete() public {
         // First create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Check before expiry
@@ -443,11 +533,15 @@ contract EthereumEscrowTest is Test {
     function testSecretReuse() public {
         // Create first escrow
         vm.prank(maker);
-        bytes32 escrowId1 = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        bytes32 escrowId1 = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Complete first escrow
@@ -456,11 +550,15 @@ contract EthereumEscrowTest is Test {
         
         // Create second escrow with same hash lock
         vm.prank(maker);
-        bytes32 escrowId2 = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        bytes32 escrowId2 = escrow.createEscrow(
             hashLock,
             timeLock + 1 hours,
             payable(taker),
-            "different_order"
+            "different_order",
+            amount
         );
         
         // Try to complete second escrow with same secret
@@ -478,22 +576,26 @@ contract EthereumEscrowTest is Test {
         
         // Create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
-        // Check contract balance increased
-        assertEq(escrow.getContractBalance(), amount);
+        // Check contract balance increased (WETH balance)
+        assertEq(weth.balanceOf(address(escrow)), amount);
         
         // Complete the escrow
         vm.prank(taker);
         escrow.completeEscrow(escrowId, secret);
         
         // Check contract balance decreased
-        assertEq(escrow.getContractBalance(), 0);
+        assertEq(weth.balanceOf(address(escrow)), 0);
     }
     
     function testNonExistentEscrow() public {
@@ -513,14 +615,19 @@ contract EthereumEscrowTest is Test {
         
         uint256 futureTimeLock = block.timestamp + _timeLockOffset;
         
-        vm.deal(maker, _amount);
-        vm.startPrank(maker);
+        vm.deal(maker, _amount + 1 ether);
+        vm.prank(maker);
+        weth.deposit{value: _amount + 1 ether}();
         
-        bytes32 fuzzEscrowId = escrow.createEscrow{value: _amount}(
+        vm.startPrank(maker);
+        weth.approve(address(escrow), _amount);
+        
+        bytes32 fuzzEscrowId = escrow.createEscrow(
             hashLock,
             futureTimeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            _amount
         );
         
         vm.stopPrank();
@@ -533,7 +640,9 @@ contract EthereumEscrowTest is Test {
             bytes32 _hashLock,
             uint256 _timeLock,
             bool _completed,
-            bool _refunded,,
+            bool _refunded,
+            uint256 _createdAt,
+            string memory _suiOrderHash
         ) = escrow.getEscrow(fuzzEscrowId);
         
         assertEq(_maker, maker);
@@ -551,15 +660,19 @@ contract EthereumEscrowTest is Test {
     function testFillEscrowPartial() public {
         // Create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         uint256 fillAmount = amount / 2; // Fill half
-        uint256 initialBalance = taker.balance;
+        uint256 initialBalance = weth.balanceOf(taker);
         
         // Fill partially
         vm.startPrank(taker);
@@ -572,7 +685,7 @@ contract EthereumEscrowTest is Test {
         vm.stopPrank();
         
         // Verify partial fill
-        assertEq(taker.balance, initialBalance + fillAmount);
+        assertEq(weth.balanceOf(taker), initialBalance + fillAmount);
         assertEq(escrow.getRemainingAmount(escrowId), amount - fillAmount);
         
         // Verify escrow is not completed yet
@@ -583,27 +696,31 @@ contract EthereumEscrowTest is Test {
     function testFillEscrowMultiplePartials() public {
         // Create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: 9 ether}(
+        weth.approve(address(escrow), 9 ether);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            9 ether
         );
         
-        uint256 initialBalance = taker.balance;
+        uint256 initialBalance = weth.balanceOf(taker);
         
         // First partial fill (3 ETH)
         vm.prank(taker);
         escrow.fillEscrow(escrowId, 3 ether, secret);
         
-        assertEq(taker.balance, initialBalance + 3 ether);
+        assertEq(weth.balanceOf(taker), initialBalance + 3 ether);
         assertEq(escrow.getRemainingAmount(escrowId), 6 ether);
         
         // Second partial fill (2 ETH)
         vm.prank(taker);
         escrow.fillEscrow(escrowId, 2 ether, secret);
         
-        assertEq(taker.balance, initialBalance + 5 ether);
+        assertEq(weth.balanceOf(taker), initialBalance + 5 ether);
         assertEq(escrow.getRemainingAmount(escrowId), 4 ether);
         
         // Final fill (4 ETH) - should complete
@@ -617,7 +734,7 @@ contract EthereumEscrowTest is Test {
         vm.stopPrank();
         
         // Verify completion
-        assertEq(taker.balance, initialBalance + 9 ether);
+        assertEq(weth.balanceOf(taker), initialBalance + 9 ether);
         assertEq(escrow.getRemainingAmount(escrowId), 0);
         
         (,,,,,, bool completed,,,) = escrow.getEscrow(escrowId);
@@ -627,15 +744,19 @@ contract EthereumEscrowTest is Test {
     function testFillEscrowByMultipleResolvers() public {
         // Create an open escrow (taker = address(0))
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: 6 ether}(
+        weth.approve(address(escrow), 6 ether);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(address(0)), // Open to any resolver
-            suiOrderHash
+            suiOrderHash,
+            6 ether
         );
         
-        uint256 resolver1InitialBalance = resolver1.balance;
-        uint256 resolver2InitialBalance = resolver2.balance;
+        uint256 resolver1InitialBalance = weth.balanceOf(resolver1);
+        uint256 resolver2InitialBalance = weth.balanceOf(resolver2);
         
         // Resolver1 fills 2 ETH
         vm.startPrank(resolver1);
@@ -658,8 +779,8 @@ contract EthereumEscrowTest is Test {
         vm.stopPrank();
         
         // Verify both resolvers received their portions
-        assertEq(resolver1.balance, resolver1InitialBalance + 2 ether);
-        assertEq(resolver2.balance, resolver2InitialBalance + 4 ether);
+        assertEq(weth.balanceOf(resolver1), resolver1InitialBalance + 2 ether);
+        assertEq(weth.balanceOf(resolver2), resolver2InitialBalance + 4 ether);
         assertEq(escrow.getRemainingAmount(escrowId), 0);
         
         (,,,,,, bool completed,,,) = escrow.getEscrow(escrowId);
@@ -669,11 +790,15 @@ contract EthereumEscrowTest is Test {
     function testFillEscrowExceedsRemaining() public {
         // Create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Try to fill more than remaining
@@ -688,11 +813,15 @@ contract EthereumEscrowTest is Test {
     function testFillEscrowZeroAmount() public {
         // Create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         // Try to fill with zero amount
@@ -707,11 +836,15 @@ contract EthereumEscrowTest is Test {
     function testFillEscrowAlreadyCompleted() public {
         // Create and complete an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
         vm.prank(taker);
@@ -729,14 +862,18 @@ contract EthereumEscrowTest is Test {
     function testCompleteEscrowCallsFillEscrow() public {
         // Create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: amount}(
+        weth.approve(address(escrow), amount);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            amount
         );
         
-        uint256 initialBalance = taker.balance;
+        uint256 initialBalance = weth.balanceOf(taker);
         
         // Complete should fill the entire remaining amount
         vm.startPrank(taker);
@@ -749,7 +886,7 @@ contract EthereumEscrowTest is Test {
         vm.stopPrank();
         
         // Verify full amount was transferred
-        assertEq(taker.balance, initialBalance + amount);
+        assertEq(weth.balanceOf(taker), initialBalance + amount);
         assertEq(escrow.getRemainingAmount(escrowId), 0);
         
         (,,,,,, bool completed,,,) = escrow.getEscrow(escrowId);
@@ -759,11 +896,15 @@ contract EthereumEscrowTest is Test {
     function testGetRemainingAmount() public {
         // Create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: 10 ether}(
+        weth.approve(address(escrow), 10 ether);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            10 ether
         );
         
         // Initially should equal total amount
@@ -785,11 +926,15 @@ contract EthereumEscrowTest is Test {
     function testRefundPartiallyFilledEscrow() public {
         // Create an escrow
         vm.prank(maker);
-        escrowId = escrow.createEscrow{value: 10 ether}(
+        weth.approve(address(escrow), 10 ether);
+        
+        vm.prank(maker);
+        escrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(taker),
-            suiOrderHash
+            suiOrderHash,
+            10 ether
         );
         
         // Partially fill
@@ -799,14 +944,14 @@ contract EthereumEscrowTest is Test {
         // Fast forward past expiry
         vm.warp(timeLock + 1);
         
-        uint256 initialBalance = maker.balance;
+        uint256 initialBalance = weth.balanceOf(maker);
         
         // Refund should return remaining amount
         vm.prank(maker);
         escrow.refundEscrow(escrowId);
         
         // Verify maker received only the remaining amount
-        assertEq(maker.balance, initialBalance + 7 ether);
+        assertEq(weth.balanceOf(maker), initialBalance + 7 ether);
     }
 
     function testFuzzPartialFills(uint256 totalAmount, uint8 numFills) public {
@@ -815,14 +960,20 @@ contract EthereumEscrowTest is Test {
         numFills = uint8(bound(numFills, 2, 10));
         
         vm.deal(maker, totalAmount);
+        vm.prank(maker);
+        weth.deposit{value: totalAmount}();
         
         // Create escrow
         vm.prank(maker);
-        bytes32 fuzzEscrowId = escrow.createEscrow{value: totalAmount}(
+        weth.approve(address(escrow), totalAmount);
+        
+        vm.prank(maker);
+        bytes32 fuzzEscrowId = escrow.createEscrow(
             hashLock,
             timeLock,
             payable(address(0)), // Open fills
-            suiOrderHash
+            suiOrderHash,
+            totalAmount
         );
         
         uint256 fillAmount = totalAmount / numFills;
@@ -832,6 +983,8 @@ contract EthereumEscrowTest is Test {
         for (uint8 i = 0; i < numFills; i++) {
             address currentResolver = address(uint160(0x1000 + i));
             vm.deal(currentResolver, 1 ether);
+            vm.prank(currentResolver);
+            weth.deposit{value: 1 ether}();
             
             vm.prank(currentResolver);
             escrow.fillEscrow(fuzzEscrowId, fillAmount, secret);
@@ -849,5 +1002,39 @@ contract EthereumEscrowTest is Test {
         assertEq(escrow.getRemainingAmount(fuzzEscrowId), 0);
         (,,,,,, bool completed,,,) = escrow.getEscrow(fuzzEscrowId);
         assertTrue(completed);
+    }
+
+    function testInsufficientWethAllowance() public {
+        vm.startPrank(maker);
+        
+        // Don't approve WETH
+        vm.expectRevert(IEthereumEscrow.InsufficientWethAllowance.selector);
+        escrow.createEscrow(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            amount
+        );
+        
+        vm.stopPrank();
+    }
+
+    function testInsufficientWethBalance() public {
+        vm.startPrank(maker);
+        
+        // Approve more than balance
+        weth.approve(address(escrow), 1000 ether);
+        
+        vm.expectRevert(); // Should revert due to insufficient balance
+        escrow.createEscrow(
+            hashLock,
+            timeLock,
+            payable(taker),
+            suiOrderHash,
+            1000 ether
+        );
+        
+        vm.stopPrank();
     }
 }

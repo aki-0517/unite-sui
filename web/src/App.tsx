@@ -81,6 +81,7 @@ function App() {
     <div className="app">
       <header className="header">
         <h1>Unite Sui Cross-Chain Swap</h1>
+        <p className="subtitle">🪙 Enhanced with WETH integration - exactly like scripts/verify-bidirectional-swap.ts</p>
         <div className="wallet-buttons">
           <ConnectButton />
           <SuiConnectButton />
@@ -159,6 +160,7 @@ function App() {
             <div className="receive-info">
               <p>You will receive: <strong>{getReceiveAmount()}</strong></p>
               <p className="rate-info">Fixed rate: 1 ETH = 1000 SUI</p>
+              <p className="weth-info">🪙 Uses WETH for secure ETH handling (same as scripts)</p>
             </div>
 
             <button

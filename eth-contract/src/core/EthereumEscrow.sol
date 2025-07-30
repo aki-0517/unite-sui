@@ -2,6 +2,8 @@
 pragma solidity ^0.8.20;
 
 import {ReentrancyGuard} from "openzeppelin-contracts/security/ReentrancyGuard.sol";
+import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
 import {IEthereumEscrow} from "../interfaces/IEthereumEscrow.sol";
 import {HashLock} from "../utils/HashLock.sol";
 import {TimeLock} from "../utils/TimeLock.sol";
@@ -10,8 +12,14 @@ import {TimeLock} from "../utils/TimeLock.sol";
  * @title EthereumEscrow
  * @dev Cross-chain escrow contract for Ethereum side of atomic swaps
  * Uses Hash-Time Lock Contract (HTLC) pattern for secure atomic swaps
+ * All ETH operations are wrapped through WETH for consistency and security
  */
 contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
+    using SafeERC20 for IERC20;
+    
+    // WETH contract address
+    IERC20 public immutable weth;
+    
     // Structs
     struct Escrow {
         address payable maker;
@@ -31,32 +39,43 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
     mapping(bytes32 => Escrow) public escrows;
     mapping(bytes32 => bool) public usedSecrets;
     
+    // Constructor
+    constructor(address _weth) {
+        weth = IERC20(_weth);
+    }
+    
     // Events and errors are inherited from IEthereumEscrow interface
 
     /**
-     * @dev Creates a new escrow with Hash-Time Lock
+     * @dev Creates a new escrow with WETH (ETH must be wrapped first)
      * @param hashLock Hash of the secret (SHA3-256)
      * @param timeLock Unix timestamp when the escrow expires
      * @param taker Address that can claim the escrow
      * @param suiOrderHash Reference to the corresponding Sui order
+     * @param wethAmount Amount of WETH to escrow
      * @return escrowId Unique identifier for the escrow
      */
     function createEscrow(
         bytes32 hashLock,
         uint256 timeLock,
         address payable taker,
-        string calldata suiOrderHash
-    ) external payable nonReentrant returns (bytes32 escrowId) {
-        if (msg.value == 0) revert InvalidAmount();
+        string calldata suiOrderHash,
+        uint256 wethAmount
+    ) external nonReentrant returns (bytes32 escrowId) {
+        if (wethAmount == 0) revert InvalidWethAmount();
         if (!TimeLock.isValidTimeLock(timeLock)) revert InvalidTimeLock();
-        // taker can be address(0) to allow any resolver to fill
+        
+        // Check WETH allowance
+        if (weth.allowance(msg.sender, address(this)) < wethAmount) {
+            revert InsufficientWethAllowance();
+        }
         
         // Generate unique escrow ID
         escrowId = keccak256(
             abi.encodePacked(
                 msg.sender,
                 taker,
-                msg.value,
+                wethAmount,
                 hashLock,
                 timeLock,
                 block.timestamp,
@@ -66,11 +85,14 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
         
         if (escrows[escrowId].maker != address(0)) revert EscrowAlreadyExists();
         
+        // Transfer WETH to contract
+        weth.safeTransferFrom(msg.sender, address(this), wethAmount);
+        
         escrows[escrowId] = Escrow({
             maker: payable(msg.sender),
             taker: taker,
-            totalAmount: msg.value,
-            remainingAmount: msg.value,
+            totalAmount: wethAmount,
+            remainingAmount: wethAmount,
             hashLock: hashLock,
             timeLock: timeLock,
             completed: false,
@@ -84,15 +106,16 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
             escrowId,
             msg.sender,
             taker,
-            msg.value,
+            wethAmount,
             hashLock,
             timeLock,
-            suiOrderHash
+            suiOrderHash,
+            true // isWeth
         );
     }
 
     /**
-     * @dev Fills the escrow partially with a specific amount
+     * @dev Fills the escrow partially with a specific amount (WETH only)
      * @param escrowId The escrow identifier
      * @param amount The amount to fill (must be <= remainingAmount)
      * @param secret The secret that matches the hash lock
@@ -135,9 +158,8 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
             escrow.completed = true;
         }
         
-        // Transfer funds to resolver
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        if (!success) revert TransferFailed();
+        // Transfer WETH to resolver
+        weth.safeTransfer(msg.sender, amount);
         
         if (isCompleted) {
             emit EscrowCompleted(escrowId, msg.sender, secret, escrow.suiOrderHash);
@@ -191,9 +213,8 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
         escrow.completed = true;
         escrow.remainingAmount = 0;
         
-        // Transfer funds to resolver
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        if (!success) revert TransferFailed();
+        // Transfer WETH to resolver
+        weth.safeTransfer(msg.sender, amount);
         
         emit EscrowCompleted(escrowId, msg.sender, secret, escrow.suiOrderHash);
     }
@@ -213,13 +234,11 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
         
         // Mark as refunded
         escrow.refunded = true;
-        
-        // Transfer remaining funds back to maker
         uint256 amount = escrow.remainingAmount;
-        escrow.remainingAmount = 0; // Prevent reentrancy
+        escrow.remainingAmount = 0;
         
-        (bool success, ) = escrow.maker.call{value: amount}("");
-        if (!success) revert TransferFailed();
+        // WETH refund
+        weth.safeTransfer(escrow.maker, amount);
         
         emit EscrowRefunded(escrowId, escrow.maker, amount, escrow.suiOrderHash);
     }
@@ -247,18 +266,8 @@ contract EthereumEscrow is ReentrancyGuard, IEthereumEscrow {
     }
 
     /**
-     * @dev Gets escrow information
+     * @dev Gets escrow information (WETH only)
      * @param escrowId The escrow identifier
-     * @return maker The maker address
-     * @return taker The taker address
-     * @return totalAmount The total escrow amount
-     * @return remainingAmount The remaining amount to be filled
-     * @return hashLock The hash lock
-     * @return timeLock The time lock
-     * @return completed Whether the escrow is completed
-     * @return refunded Whether the escrow is refunded
-     * @return createdAt The creation timestamp
-     * @return suiOrderHash The Sui order hash
      */
     function getEscrow(bytes32 escrowId) external view returns (
         address maker,
