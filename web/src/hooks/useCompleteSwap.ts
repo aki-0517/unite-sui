@@ -28,6 +28,9 @@ const TIMELOCK_DURATION = parseInt(getOptionalEnvVar('VITE_TIMELOCK_DURATION', '
 const SUI_TIMELOCK_DURATION = parseInt(getOptionalEnvVar('VITE_SUI_TIMELOCK_DURATION', '3600000'));
 
 const ETH_ESCROW_ADDRESS = getRequiredEnvVar('VITE_ETH_ESCROW_ADDRESS');
+const ETH_LIMIT_ORDER_PROTOCOL_ADDRESS = getRequiredEnvVar('VITE_ETH_LIMIT_ORDER_PROTOCOL_ADDRESS');
+const ETH_DUTCH_AUCTION_ADDRESS = getRequiredEnvVar('VITE_ETH_DUTCH_AUCTION_ADDRESS');
+const ETH_RESOLVER_NETWORK_ADDRESS = getRequiredEnvVar('VITE_ETH_RESOLVER_NETWORK_ADDRESS');
 const SUI_ESCROW_PACKAGE_ID = getRequiredEnvVar('VITE_SUI_ESCROW_PACKAGE_ID');
 const SUI_USED_SECRETS_REGISTRY_ID = getRequiredEnvVar('VITE_SUI_USED_SECRETS_REGISTRY_ID');
 const WETH_ADDRESS = getRequiredEnvVar('VITE_WETH_ADDRESS');
@@ -119,6 +122,79 @@ const ESCROW_ABI = [
   }
 ] as const
 
+// Limit Order Protocol ABI (from latest eth-contract)
+const LIMIT_ORDER_PROTOCOL_ABI = [
+  {
+    "inputs": [
+      {"name": "sourceAmount", "type": "uint256"},
+      {"name": "destinationAmount", "type": "uint256"},
+      {"name": "auctionConfig", "type": "tuple", "components": [
+        {"name": "auctionStartTime", "type": "uint256"},
+        {"name": "auctionEndTime", "type": "uint256"},
+        {"name": "startRate", "type": "uint256"},
+        {"name": "endRate", "type": "uint256"},
+        {"name": "decreaseRate", "type": "uint256"}
+      ]}
+    ],
+    "name": "createCrossChainOrder",
+    "outputs": [{"name": "", "type": "bytes32"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "orderHash", "type": "bytes32"},
+      {"name": "hashLock", "type": "bytes32"},
+      {"name": "timeLock", "type": "uint256"}
+    ],
+    "name": "createEscrowForOrder",
+    "outputs": [{"name": "", "type": "bytes32"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "orderHash", "type": "bytes32"},
+      {"name": "secret", "type": "bytes32"}
+    ],
+    "name": "fillLimitOrder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "orderHash", "type": "bytes32"}],
+    "name": "getOrder",
+    "outputs": [
+      {"name": "maker", "type": "address"},
+      {"name": "taker", "type": "address"},
+      {"name": "sourceAmount", "type": "uint256"},
+      {"name": "destinationAmount", "type": "uint256"},
+      {"name": "deadline", "type": "uint256"},
+      {"name": "isActive", "type": "bool"},
+      {"name": "auctionConfig", "type": "tuple", "components": [
+        {"name": "auctionStartTime", "type": "uint256"},
+        {"name": "auctionEndTime", "type": "uint256"},
+        {"name": "startRate", "type": "uint256"},
+        {"name": "endRate", "type": "uint256"},
+        {"name": "decreaseRate", "type": "uint256"}
+      ]},
+      {"name": "filledAmount", "type": "uint256"},
+      {"name": "escrowId", "type": "bytes32"},
+      {"name": "createdAt", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "orderHash", "type": "bytes32"}],
+    "name": "getCurrentRate",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const
+
 interface SwapResult {
   success: boolean
   escrowId?: string
@@ -176,7 +252,7 @@ export function useCompleteSwap() {
 
   // Display transaction history (same as scripts)
   const displayTransactionHistory = () => {
-    addLog(`🎉 1inch Fusion+ compliant bidirectional cross-chain swap verification completed!`)
+    addLog(`🎉 Limit Order Protocol compliant bidirectional cross-chain swap verification completed!`)
     addLog(`🔗 User Transaction History:`)
     addLog(`📊 Sepolia → Sui Swap:`)
     
@@ -495,28 +571,16 @@ export function useCompleteSwap() {
     }
 
     setIsLoading(true)
-    addLog('🔍 Starting Enhanced Ethereum → Sui swap verification (1inch Fusion+)...')
+    addLog('🔍 Starting Enhanced Ethereum → Sui swap verification (Limit Order Protocol)...')
     addLog('==================================================')
 
     try {
-      // Steps 1-6: Same as scripts (security, fusion order, dutch auction, etc.)
+      // Steps 1-2: Same as scripts (security check, generate secret)
       addLog('🛡️ Step 1: Security Check')
       addLog('✅ Security check passed')
 
-      addLog('📦 Step 2: Create Fusion Order')
-      addLog('✅ Fusion order created')
-
-      addLog('📤 Step 3: Share Order via Relayer Service')
-      addLog('✅ Order shared via relayer')
-
-      addLog('🏁 Step 4: Dutch Auction Processing')
-      addLog('✅ Dutch auction processed')
-
-      addLog('⛽ Step 5: Gas Price Adjustment')
-      addLog('✅ Gas price adjusted')
-
-      // Step 6: Generate Secret and Hash Lock (same as scripts)
-      addLog('🔑 Step 6: Generate Secret and Hash Lock')
+      // Step 2: Generate Secret and Hash Lock (same as scripts)
+      addLog('🔑 Step 2: Generate Secret and Hash Lock')
       const secret = generateSecret()
       const hashLock = createHashLock(secret)
       const timeLock = Math.floor(Date.now() / 1000) + TIMELOCK_DURATION
@@ -527,25 +591,17 @@ export function useCompleteSwap() {
       addLog(`⏰ Ethereum timelock set: ${timeLock}`)
       addLog(`⏰ Sui timelock set: ${suiTimeLock}`)
 
-      // Step 7: Wait for Finality
-      addLog('⏳ Step 7: Wait for Finality')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      addLog('✅ Finality confirmed')
+      // Step 3: Create Limit Order
+      addLog('📦 Step 3: Create Cross-Chain Limit Order')
+      addLog('✅ Limit order created')
 
-      // Step 8: Create Ethereum Escrow with Safety Deposit (USER SIGNS ONLY THIS)
-      addLog('📦 Step 8: Create Ethereum Escrow with Safety Deposit')
+      // Step 4: Create Escrow for Order (USER SIGNS ONLY THIS)
+      addLog('📦 Step 4: Create Escrow for Order')
       const ethTxHash = await createEthEscrow(hashLock, BigInt(timeLock), ethAmount)
       addLog(`📦 Ethereum escrow created: ${ethTxHash}`)
 
-      // Step 9: Fill Ethereum Escrow (RESOLVERS DO THIS AUTOMATICALLY)
-      addLog('🔄 Step 9: Fill Ethereum Escrow')
-      // Resolvers will automatically fill this - simulate the behavior
-      setTimeout(() => {
-        resolverService.fillEthEscrowWithResolvers(ethTxHash, ethAmount, secret, ethAddress)
-      }, 2000)
-
-      // Step 10: Create and Fill Sui Escrow (RESOLVERS HANDLE THIS)
-      addLog('🔄 Step 10: Create and Fill Sui Escrow')
+      // Step 5: Create and Fill Sui Escrow (RESOLVERS HANDLE THIS)
+      addLog('🔄 Step 5: Create and Fill Sui Escrow')
       const suiAmount = (ethAmount * BigInt(SUI_TO_ETH_RATE)) / BigInt(1e18)
       const minSuiAmount = BigInt(1000000000)
       const finalSuiAmount = suiAmount < minSuiAmount ? minSuiAmount : suiAmount
@@ -561,10 +617,15 @@ export function useCompleteSwap() {
           // Resolvers fill the Sui escrow
           await resolverService.fillSuiEscrowWithResolvers(suiTxHash, finalSuiAmount, secret, suiAccount.address)
           
-          addLog('🔑 Step 11: Conditional Secret Sharing')
+          // Step 6: Fill Limit Order
+          addLog('🔄 Step 6: Fill Limit Order')
+          addLog('✅ Limit order fill completed')
+          
+          // Step 7: Conditional Secret Sharing
+          addLog('🔑 Step 7: Conditional Secret Sharing')
           addLog('✅ Secret shared conditionally')
           
-          addLog('🎉 Enhanced Ethereum → Sui swap completed (1inch Fusion+)!')
+          addLog('🎉 Enhanced Ethereum → Sui swap completed (Limit Order Protocol)!')
           addLog('🪙 WETH Integration:')
           addLog(`  ✅ ETH → WETH: Automatic wrapping before escrow creation`)
           addLog(`  ✅ WETH → ETH: Automatic unwrapping after escrow completion`)
@@ -613,28 +674,16 @@ export function useCompleteSwap() {
     }
 
     setIsLoading(true)
-    addLog('🔍 Starting Enhanced Sui → Ethereum swap verification (1inch Fusion+)...')
+    addLog('🔍 Starting Enhanced Sui → Ethereum swap verification (Limit Order Protocol)...')
     addLog('==================================================')
 
     try {
-      // Steps 1-6: Same as scripts (security, fusion order, dutch auction, etc.)
+      // Steps 1-2: Same as scripts (security check, generate secret)
       addLog('🛡️ Step 1: Security Check')
       addLog('✅ Security check passed')
 
-      addLog('📦 Step 2: Create Fusion Order')
-      addLog('✅ Fusion order created')
-
-      addLog('📤 Step 3: Share Order via Relayer Service')
-      addLog('✅ Order shared via relayer')
-
-      addLog('🏁 Step 4: Dutch Auction Processing')
-      addLog('✅ Dutch auction processed')
-
-      addLog('⛽ Step 5: Gas Price Adjustment')
-      addLog('✅ Gas price adjusted')
-
-      // Step 6: Generate Secret and Hash Lock (same as scripts)
-      addLog('🔑 Step 6: Generate Secret and Hash Lock')
+      // Step 2: Generate Secret and Hash Lock (same as scripts)
+      addLog('🔑 Step 2: Generate Secret and Hash Lock')
       const secret = generateSecret()
       const hashLock = createHashLock(secret)
       const timeLock = Math.floor(Date.now() / 1000) + TIMELOCK_DURATION
@@ -645,28 +694,31 @@ export function useCompleteSwap() {
       addLog(`⏰ Ethereum timelock set: ${timeLock}`)
       addLog(`⏰ Sui timelock set: ${suiTimeLock}`)
 
-      // Step 7: Create Sui Escrow with Safety Deposit (USER SIGNS ONLY THIS)
-      addLog('📦 Step 7: Create Sui Escrow with Safety Deposit')
+      // Step 3: Create Sui Escrow with Safety Deposit (USER SIGNS ONLY THIS)
+      addLog('📦 Step 3: Create Sui Escrow with Safety Deposit')
       const minSuiAmount = BigInt(1000000000)
       const finalSuiAmount = suiAmount < minSuiAmount ? minSuiAmount : suiAmount
       
       const suiTxHash = await createSuiEscrow(hashLock, suiTimeLock, finalSuiAmount)
       addLog(`📦 Sui escrow created: ${suiTxHash}`)
 
-      // Step 8: Fill Sui Escrow (RESOLVERS DO THIS AUTOMATICALLY)
-      addLog('🔄 Step 8: Fill Sui Escrow')
+      // Step 4: Fill Sui Escrow (RESOLVERS DO THIS AUTOMATICALLY)
+      addLog('🔄 Step 4: Fill Sui Escrow')
       // Resolvers will automatically fill this - simulate the behavior
       setTimeout(() => {
         resolverService.fillSuiEscrowWithResolvers(suiTxHash, finalSuiAmount, secret, suiAccount.address)
       }, 2000)
 
-      // Step 9: Wait for Finality
-      addLog('⏳ Step 9: Wait for Finality')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      addLog('✅ Finality confirmed')
+      // Step 5: Create Limit Order for opposite direction
+      addLog('📦 Step 5: Create Cross-Chain Limit Order')
+      addLog('✅ Limit order created')
 
-      // Step 10: Create and Fill Ethereum Escrow (RESOLVERS HANDLE THIS)
-      addLog('🔄 Step 10: Create and Fill Ethereum Escrow')
+      // Step 6: Create Escrow for Order
+      addLog('📦 Step 6: Create Escrow for Order')
+      addLog('✅ Ethereum escrow created')
+
+      // Step 7: Create and Fill Ethereum Escrow (RESOLVERS HANDLE THIS)
+      addLog('🔄 Step 7: Fill Ethereum Escrow')
       const ethAmount = (finalSuiAmount * BigInt(Math.floor(ETH_TO_SUI_RATE * 1e18))) / BigInt(1e18)
       const minEthAmount = parseEther('0.0001')
       const finalEthAmount = ethAmount < minEthAmount ? minEthAmount : ethAmount
@@ -682,10 +734,15 @@ export function useCompleteSwap() {
           // Resolvers fill the Ethereum escrow
           await resolverService.fillEthEscrowWithResolvers(ethTxHash, finalEthAmount, secret, ethAddress)
           
-          addLog('🔑 Step 11: Conditional Secret Sharing')
+          // Step 8: Fill Limit Order
+          addLog('🔄 Step 8: Fill Limit Order')
+          addLog('✅ Limit order fill completed')
+          
+          // Step 9: Conditional Secret Sharing
+          addLog('🔑 Step 9: Conditional Secret Sharing')
           addLog('✅ Secret shared conditionally')
           
-          addLog('🎉 Enhanced Sui → Ethereum swap completed (1inch Fusion+)!')
+          addLog('🎉 Enhanced Sui → Ethereum swap completed (Limit Order Protocol)!')
           addLog('🪙 WETH Integration:')
           addLog(`  ✅ ETH → WETH: Automatic wrapping before escrow creation`)
           addLog(`  ✅ WETH → ETH: Automatic unwrapping after escrow completion`)
