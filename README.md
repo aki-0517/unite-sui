@@ -43,11 +43,17 @@ This project implements Hash-Time Lock Contract (HTLC) pattern for secure atomic
 
 #### Flow Overview
 
-1. **Order Creation**: User calls `createCrossChainOrder` with auction settings; order is registered and auction started.
-2. **Escrow Setup**: HTLC escrows are created on both chains, locking assets with hashlock/timelock.
-3. **Auction & Fill**: Resolvers monitor auction rates and fill orders when profitable; partial fills are tracked.
-4. **Cross-chain & Secret Reveal**: Secret revealed on one chain unlocks funds on the other; verification is on-chain.
-5. **Completion & Refund**: Correct secret transfers assets; after expiry, refunds are possible; resolver misbehavior is penalized.
+1. **Order Creation & Auction Setup**: User calls `createCrossChainOrder` with WETH, target amount, and auction configuration. LimitOrderProtocol transfers WETH, initializes Dutch auction, and registers with ResolverNetwork.
+
+2. **Secret Generation & Escrow Creation**: User generates secret and hash lock, then calls `createEscrowForOrder` to create HTLC escrow on Ethereum with time-locked funds.
+
+3. **Dutch Auction & Resolver Competition**: Authorized resolvers monitor decreasing auction rates via `calculateCurrentRate`. Resolvers compete by filling orders when rates become profitable.
+
+4. **Order Fulfillment with Partial Fills**: Resolvers call `fillLimitOrder` with the secret. EthereumEscrow verifies secrets and enables partial fills by multiple resolvers. Each fill transfers WETH proportionally.
+
+5. **Cross-Chain Escrow Operations**: User creates corresponding Sui escrow with same hash lock. Sui resolvers use the same secret to claim SUI tokens, completing the atomic swap.
+
+6. **Completion & Reputation Updates**: LimitOrderProtocol marks orders complete, DutchAuction ends, and ResolverNetwork updates resolver reputation based on performance.
 
 
 ### Cross-Chain Swap Flow
@@ -55,71 +61,86 @@ This project implements Hash-Time Lock Contract (HTLC) pattern for secure atomic
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant ETH as Ethereum Escrow
+    participant LOP as LimitOrderProtocol
+    participant DA as DutchAuction
+    participant RN as ResolverNetwork
+    participant ETH as EthereumEscrow
+    participant RES1 as Resolver1
     participant RES2 as Resolver2
-    participant RES3 as Resolver3
     participant SUI as Sui Escrow
+    participant SUI_RES1 as Sui Resolver1
     participant SUI_RES2 as Sui Resolver2
-    participant SUI_RES3 as Sui Resolver3
-    participant FUSION as 1inch Fusion+
     
-    Note over U, FUSION: Phase 1: Initialization and Security Check
+    Note over U, SUI_RES2: Phase 1: Order Creation & Auction Setup
     
-    U->>FUSION: 1. Security Check
-    FUSION->>FUSION: 2. Create Fusion Order
-    FUSION->>FUSION: 3. Share Order via Relayer
-    FUSION->>FUSION: 4. Dutch Auction Processing
-    FUSION->>FUSION: 5. Gas Price Adjustment
+    U->>LOP: 1. createCrossChainOrder(sourceAmount, destAmount, auctionConfig)
+    Note right of U: WETH: 0.0001 ETH<br/>Target: 0.1 SUI<br/>Auction: 5min-24h duration
     
-    Note over U, FUSION: Phase 2: Secret and Hash Lock Generation
+    LOP->>LOP: 2. Transfer WETH to contract
+    LOP->>DA: 3. initializeAuction(orderHash, config)
+    LOP->>RN: 4. registerOrder(orderHash, amounts)
     
-    FUSION->>FUSION: 6. Generate Secret & Hash Lock
-    Note right of FUSION: Secret: 0x...<br/>Hash Lock: keccak256(secret)<br/>Time Lock: current + 1 hour
+    LOP-->>U: Order Hash: 0x...
     
-    Note over U, FUSION: Phase 3: Finality Wait
+    Note over U, SUI_RES2: Phase 2: Secret Generation & Escrow Creation
     
-    FUSION->>FUSION: 7. Wait for Chain Finality
+    U->>U: 5. Generate Secret & Hash Lock
+    Note right of U: Secret: 0x...<br/>Hash Lock: keccak256(secret)<br/>Time Lock: current + 1 hour
     
-    Note over U, FUSION: Phase 4: Ethereum Escrow Creation
+    U->>LOP: 6. createEscrowForOrder(orderHash, hashLock, timeLock)
+    LOP->>ETH: 7. createEscrow(hashLock, timeLock, amount)
     
-    U->>ETH: 8. Create Ethereum Escrow
-    Note right of ETH: Amount: 0.0001 ETH<br/>Hash Lock: 0x...<br/>Time Lock: timestamp + 3600<br/>Taker: user address
+    ETH-->>LOP: Escrow ID: 0x...
+    LOP-->>U: Escrow Created
     
-    ETH-->>U: Escrow ID: 0x...
+    Note over U, SUI_RES2: Phase 3: Dutch Auction & Resolver Competition
     
-    Note over U, FUSION: Phase 5: Ethereum Escrow Fill (Partial Fill by 2 Resolvers)
+    loop Auction Period
+        RES1->>DA: 8a. calculateCurrentRate(orderHash)
+        DA-->>RES1: Current Rate (decreasing over time)
+        RES2->>DA: 8b. calculateCurrentRate(orderHash)
+        DA-->>RES2: Current Rate (decreasing over time)
+    end
     
-    RES2->>ETH: 9a. Fill Escrow (50%)
-    Note right of RES2: Amount: 0.00005 ETH<br/>Secret: 0x...
-    ETH-->>RES2: Received coins
-    RES2->>U: Transfer to user address
+    Note over U, SUI_RES2: Phase 4: Order Fulfillment (Partial Fills)
     
-    RES3->>ETH: 9b. Fill Escrow (50%)
-    Note right of RES3: Amount: 0.00005 ETH<br/>Secret: 0x...
-    ETH-->>RES3: Received coins
-    RES3->>U: Transfer to user address
+    RES1->>RN: 9a. Check authorization
+    RN-->>RES1: Authorized
+    RES1->>LOP: 10a. fillLimitOrder(orderHash, secret)
+    LOP->>DA: Get current rate
+    LOP->>ETH: fillEscrow(escrowId, amount, secret)
+    ETH->>ETH: Verify secret & partial fill (50%)
+    ETH-->>RES1: Transfer 0.00005 WETH
+    LOP->>RN: recordOrderFill(resolver, amount, rate)
     
-    Note over U, FUSION: Phase 6: Sui Escrow Creation and Fill
+    RES2->>LOP: 10b. fillLimitOrder(orderHash, secret)
+    LOP->>ETH: fillEscrow(escrowId, remainingAmount, secret)
+    ETH->>ETH: Verify same secret & complete (50%)
+    ETH-->>RES2: Transfer 0.00005 WETH
+    LOP->>RN: recordOrderFill(resolver, amount, rate)
     
-    U->>SUI: 10a. Create Sui Escrow
+    Note over U, SUI_RES2: Phase 5: Cross-Chain Sui Escrow Operations
+    
+    U->>SUI: 11a. Create Sui Escrow
     Note right of SUI: Amount: 0.1 SUI<br/>Hash Lock: 0x...<br/>Time Lock: timestamp + 3600000ms
     
     SUI-->>U: Sui Escrow ID: 0x...
     
-    SUI_RES2->>SUI: 10b. Fill Sui Escrow (50%)
-    Note right of SUI_RES2: Amount: 0.05 SUI<br/>Secret: 0x...
+    SUI_RES1->>SUI: 11b. Fill Sui Escrow (50%)
+    Note right of SUI_RES1: Amount: 0.05 SUI<br/>Secret: 0x... (same secret)
+    SUI-->>SUI_RES1: Received coins
+    SUI_RES1->>U: Transfer to user Sui address
+    
+    SUI_RES2->>SUI: 11c. Fill Sui Escrow (50%) 
+    Note right of SUI_RES2: Amount: 0.05 SUI<br/>Secret: 0x... (same secret)
     SUI-->>SUI_RES2: Received coins
     SUI_RES2->>U: Transfer to user Sui address
     
-    SUI_RES3->>SUI: 10c. Fill Sui Escrow (50%)
-    Note right of SUI_RES3: Amount: 0.05 SUI<br/>Secret: 0x...
-    SUI-->>SUI_RES3: Received coins
-    SUI_RES3->>U: Transfer to user Sui address
+    Note over U, SUI_RES2: Phase 6: Order Completion & Cleanup
     
-    Note over U, FUSION: Phase 7: Conditional Secret Sharing
-    
-    FUSION->>FUSION: 11. Conditional Secret Sharing
-    Note right of FUSION: Share secret when<br/>finality is confirmed
+    LOP->>LOP: 12. Mark order as completed
+    DA->>DA: 13. Auction ended
+    RN->>RN: 14. Update resolver reputation
 ```
 
 
