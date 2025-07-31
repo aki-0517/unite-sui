@@ -234,7 +234,7 @@ export class SafetyDepositManager {
   }
   
   calculateSafetyDeposit(escrowAmount: bigint): bigint {
-    const calculatedAmount = (escrowAmount * BigInt(Math.floor(this.config.rate * 1000))) / 1000n;
+    const calculatedAmount = (escrowAmount * BigInt(Math.floor(this.config.rate * 1000))) / BigInt(1000);
     const finalAmount = calculatedAmount > this.config.minAmount ? calculatedAmount : this.config.minAmount;
     
     console.log(`🛡️ Safety Deposit Calculation:`);
